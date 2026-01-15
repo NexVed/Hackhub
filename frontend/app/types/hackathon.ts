@@ -3,7 +3,8 @@ export interface Hackathon {
   name: string;
   startDate: string;
   endDate: string;
-  platform: 'Devfolio' | 'MLH' | 'Devpost' | 'HackerEarth' | 'Other';
+  platform: 'Unstop' | 'Devfolio' | 'Devnovate' | 'Hack2Skill' | 'HackerEarth' | 'Devpost' | 'MLH' | 'Other';
+  description: string;
   tags: string[];
   url: string;
   status: 'upcoming' | 'live' | 'ending-soon';

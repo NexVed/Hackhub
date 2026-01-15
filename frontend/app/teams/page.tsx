@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
-import { Users, Plus, Search, MessageCircle, Trophy, Calendar, Crown, UserPlus } from 'lucide-react';
+import { Users, Plus, Search, MessageCircle, Trophy, UserPlus, Settings } from 'lucide-react';
+import CreateTeamDialog from '../components/teams/CreateTeamDialog';
 
 interface TeamMember {
     id: string;
@@ -21,6 +23,8 @@ interface Team {
     members: TeamMember[];
     hackathon?: string;
     status: 'active' | 'recruiting' | 'completed';
+    ownerId?: string;
+    requests?: TeamMember[];
 }
 
 const mockTeams: Team[] = [
@@ -31,10 +35,15 @@ const mockTeams: Team[] = [
         members: [
             { id: 'm1', name: 'Alex Chen', role: 'Lead Developer', avatar: 'A', skills: ['React', 'Node.js'] },
             { id: 'm2', name: 'Sarah Kim', role: 'UI/UX Designer', avatar: 'S', skills: ['Figma', 'CSS'] },
-            { id: 'm3', name: 'Mike Johnson', role: 'Backend Developer', avatar: 'M', skills: ['Python', 'Django'] },
+            { id: 'me', name: 'You', role: 'Owner', avatar: 'Me', skills: [] }
         ],
         hackathon: 'BuildForBharat',
         status: 'active',
+        ownerId: 'me',
+        requests: [
+            { id: 'req1', name: 'David Lee', role: 'Full Stack', avatar: 'D', skills: ['Next.js', 'PostgreSQL'] },
+            { id: 'req2', name: 'Maria Garcia', role: 'Frontend Dev', avatar: 'M', skills: ['Vue', 'Tailwind'] }
+        ]
     },
     {
         id: 'team-2',
@@ -46,6 +55,7 @@ const mockTeams: Team[] = [
         ],
         hackathon: 'AI Agents Hackathon',
         status: 'active',
+        ownerId: 'other'
     },
     {
         id: 'team-3',
@@ -55,7 +65,8 @@ const mockTeams: Team[] = [
             { id: 'm6', name: 'Alex Chen', role: 'Smart Contract Dev', avatar: 'A', skills: ['Solidity', 'Web3.js'] },
         ],
         status: 'recruiting',
-    },
+        ownerId: 'other'
+    }
 ];
 
 const statusColors = {
@@ -65,12 +76,36 @@ const statusColors = {
 };
 
 export default function TeamsPage() {
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
+    const [teams, setTeams] = useState<Team[]>(mockTeams);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [requestedTeams, setRequestedTeams] = useState<string[]>([]);
 
-    const filteredTeams = mockTeams.filter((team) =>
+    const filteredTeams = teams.filter((team) =>
         team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         team.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleCreateTeam = (teamData: any) => {
+        const newTeam: Team = {
+            id: `team-${Date.now()}`,
+            name: teamData.name,
+            description: teamData.description,
+            hackathon: teamData.hackathon || undefined,
+            status: teamData.status,
+            members: [
+                { id: 'me', name: 'You', role: 'Owner', avatar: 'Me', skills: [] }
+            ],
+            ownerId: 'me',
+            requests: []
+        };
+        setTeams([newTeam, ...teams]);
+    };
+
+    const handleRequestJoin = (teamId: string) => {
+        setRequestedTeams([...requestedTeams, teamId]);
+    };
 
     return (
         <SidebarProvider>
@@ -92,7 +127,10 @@ export default function TeamsPage() {
                                     Manage your hackathon teams and find collaborators
                                 </p>
                             </div>
-                            <button className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors">
+                            <button
+                                onClick={() => setIsCreateDialogOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors"
+                            >
                                 <Plus className="w-4 h-4" />
                                 Create Team
                             </button>
@@ -112,85 +150,118 @@ export default function TeamsPage() {
 
                         {/* Teams Grid */}
                         <div className="grid gap-4 md:grid-cols-2">
-                            {filteredTeams.map((team) => (
-                                <div
-                                    key={team.id}
-                                    className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
-                                >
-                                    <div className="p-5">
-                                        {/* Team Header */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                                    <Users className="w-6 h-6 text-white" />
+                            {filteredTeams.map((team) => {
+                                const isOwner = team.ownerId === 'me';
+                                const pendingRequests = team.requests?.length || 0;
+                                const hasRequested = requestedTeams.includes(team.id);
+
+                                return (
+                                    <div
+                                        key={team.id}
+                                        className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 transition-colors flex flex-col"
+                                    >
+                                        <div className="p-5 flex-1">
+                                            {/* Team Header */}
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                                                        <Users className="w-6 h-6 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                                            {team.name}
+                                                        </h3>
+                                                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[team.status]}`}>
+                                                            {team.status === 'recruiting' ? '🔍 Recruiting' : team.status === 'active' ? '🚀 Active' : '✅ Completed'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                                        {team.name}
-                                                    </h3>
-                                                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[team.status]}`}>
-                                                        {team.status === 'recruiting' ? '🔍 Recruiting' : team.status === 'active' ? '🚀 Active' : '✅ Completed'}
+                                            </div>
+
+                                            {/* Description */}
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                                                {team.description}
+                                            </p>
+
+                                            {/* Hackathon */}
+                                            {team.hackathon && (
+                                                <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                                    <Trophy className="w-4 h-4 text-amber-500" />
+                                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                                                        {team.hackathon}
                                                     </span>
                                                 </div>
-                                            </div>
-                                        </div>
+                                            )}
 
-                                        {/* Description */}
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                                            {team.description}
-                                        </p>
-
-                                        {/* Hackathon */}
-                                        {team.hackathon && (
-                                            <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                                                <Trophy className="w-4 h-4 text-amber-500" />
-                                                <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                                    {team.hackathon}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Members */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex -space-x-2">
-                                                {team.members.slice(0, 4).map((member, index) => (
-                                                    <div
-                                                        key={member.id}
-                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white dark:border-zinc-900 ${index === 0
+                                            {/* Members */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex -space-x-2">
+                                                    {team.members.slice(0, 4).map((member, index) => (
+                                                        <div
+                                                            key={member.id}
+                                                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white dark:border-zinc-900 ${index === 0
                                                                 ? 'bg-gradient-to-br from-violet-500 to-purple-600'
                                                                 : index === 1
                                                                     ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
                                                                     : 'bg-gradient-to-br from-amber-500 to-orange-600'
-                                                            }`}
-                                                        title={member.name}
-                                                    >
-                                                        {member.avatar}
-                                                    </div>
-                                                ))}
-                                                {team.members.length > 4 && (
-                                                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-medium text-zinc-600 dark:text-zinc-300 border-2 border-white dark:border-zinc-900">
-                                                        +{team.members.length - 4}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex gap-2">
-                                                <button className="p-2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                                                    <MessageCircle className="w-4 h-4" />
-                                                </button>
-                                                {team.status === 'recruiting' && (
-                                                    <button className="p-2 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                                                        <UserPlus className="w-4 h-4" />
-                                                    </button>
-                                                )}
+                                                                }`}
+                                                            title={member.name}
+                                                        >
+                                                            {member.avatar}
+                                                        </div>
+                                                    ))}
+                                                    {team.members.length > 4 && (
+                                                        <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-medium text-zinc-600 dark:text-zinc-300 border-2 border-white dark:border-zinc-900">
+                                                            +{team.members.length - 4}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {/* Actions Footer */}
+                                        <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between gap-3">
+                                            {isOwner ? (
+                                                <button
+                                                    onClick={() => router.push(`/teams/${team.id}/manage`)}
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors relative"
+                                                >
+                                                    <Settings className="w-4 h-4 text-zinc-500" />
+                                                    Manage Team
+                                                    {pendingRequests > 0 && (
+                                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white border-2 border-white dark:border-zinc-900">
+                                                            {pendingRequests}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleRequestJoin(team.id)}
+                                                    disabled={hasRequested || team.status !== 'recruiting'}
+                                                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${hasRequested
+                                                            ? 'bg-zinc-100 text-zinc-500 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500'
+                                                            : team.status !== 'recruiting'
+                                                                ? 'bg-zinc-100 text-zinc-500 cursor-not-allowed opacity-50'
+                                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-600 dark:hover:bg-violet-900/20 dark:hover:border-violet-800 dark:hover:text-violet-300'
+                                                        }`}
+                                                >
+                                                    {hasRequested ? (
+                                                        <>Request Sent</>
+                                                    ) : (
+                                                        <>
+                                                            <UserPlus className="w-4 h-4" />
+                                                            Request to Join
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
-                        {/* Find Team CTA */}
+                        {/* ... CTA ... */}
                         <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 rounded-xl border border-violet-200 dark:border-violet-800 p-6 text-center">
                             <Users className="w-12 h-12 mx-auto mb-3 text-violet-600 dark:text-violet-400" />
                             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -205,6 +276,12 @@ export default function TeamsPage() {
                         </div>
                     </div>
                 </div>
+
+                <CreateTeamDialog
+                    open={isCreateDialogOpen}
+                    onOpenChange={setIsCreateDialogOpen}
+                    onSubmit={handleCreateTeam}
+                />
             </SidebarInset>
         </SidebarProvider>
     );

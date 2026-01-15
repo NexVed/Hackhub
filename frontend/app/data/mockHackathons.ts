@@ -1,9 +1,33 @@
 import { Hackathon } from '../types/hackathon';
 
 export const mockHackathons: Hackathon[] = [
-    // Upcoming
+    // Unstop
     {
-        id: 'hack-1',
+        id: 'hack-unstop-1',
+        name: 'Flipkart GRiD 6.0',
+        startDate: '2026-02-10',
+        endDate: '2026-03-15',
+        platform: 'Unstop',
+        tags: ['E-commerce', 'Robotics', 'Software'],
+        url: 'https://unstop.com/hackathons',
+        status: 'upcoming',
+        description: 'Flipkart\'s flagship engineering campus challenge for students.',
+    },
+    {
+        id: 'hack-unstop-2',
+        name: 'L\u2019Or\u00e9al Brandstorm 2026',
+        startDate: '2026-01-20',
+        endDate: '2026-04-10',
+        platform: 'Unstop',
+        tags: ['Innovation', 'Marketing', 'Business'],
+        url: 'https://unstop.com/competitions',
+        status: 'live',
+        description: 'Innovate the future of beauty with L\u2019Or\u00e9al.',
+    },
+
+    // Devfolio
+    {
+        id: 'hack-devfolio-1',
         name: 'ETHGlobal Bangkok',
         startDate: '2026-02-15',
         endDate: '2026-02-17',
@@ -11,31 +35,10 @@ export const mockHackathons: Hackathon[] = [
         tags: ['Web3', 'Blockchain', 'DeFi'],
         url: 'https://ethglobal.com/events/bangkok',
         status: 'upcoming',
+        description: 'The biggest Web3 hackathon in Southeast Asia.',
     },
     {
-        id: 'hack-2',
-        name: 'HackMIT 2026',
-        startDate: '2026-02-20',
-        endDate: '2026-02-22',
-        platform: 'MLH',
-        tags: ['AI', 'Full Stack', 'Open Innovation'],
-        url: 'https://hackmit.org',
-        status: 'upcoming',
-    },
-    {
-        id: 'hack-3',
-        name: 'Google Cloud Hackathon',
-        startDate: '2026-03-01',
-        endDate: '2026-03-03',
-        platform: 'Devpost',
-        tags: ['Cloud', 'ML', 'GCP'],
-        url: 'https://devpost.com/hackathons',
-        status: 'upcoming',
-    },
-
-    // Live
-    {
-        id: 'hack-4',
+        id: 'hack-devfolio-2',
         name: 'BuildForBharat',
         startDate: '2026-01-10',
         endDate: '2026-01-20',
@@ -43,9 +46,38 @@ export const mockHackathons: Hackathon[] = [
         tags: ['FinTech', 'India', 'UPI'],
         url: 'https://buildforbharat.devfolio.co',
         status: 'live',
+        description: 'Solving India\'s hardest fintech problems.',
     },
+
+    // Devnovate
     {
-        id: 'hack-5',
+        id: 'hack-devnovate-1',
+        name: 'InnovateX 2026',
+        startDate: '2026-03-05',
+        endDate: '2026-03-07',
+        platform: 'Devnovate',
+        tags: ['SaaS', 'Cloud', 'AI'],
+        url: '#',
+        status: 'upcoming',
+        description: 'Build the next generation of SaaS applications.',
+    },
+
+    // Hack2Skill
+    {
+        id: 'hack-h2s-1',
+        name: 'Smart India Hackathon',
+        startDate: '2026-04-01',
+        endDate: '2026-04-05',
+        platform: 'Hack2Skill',
+        tags: ['GovTech', 'Smart City', 'Education'],
+        url: '#',
+        status: 'upcoming',
+        description: 'World\'s biggest open innovation model.',
+    },
+
+    // HackerEarth
+    {
+        id: 'hack-he-1',
         name: 'AI Agents Hackathon',
         startDate: '2026-01-12',
         endDate: '2026-01-19',
@@ -53,41 +85,60 @@ export const mockHackathons: Hackathon[] = [
         tags: ['AI', 'LLM', 'Agents'],
         url: 'https://hackerearth.com',
         status: 'live',
+        description: 'Build autonomous agents that solve real-world tasks.',
     },
     {
-        id: 'hack-6',
-        name: 'React Global Summit',
-        startDate: '2026-01-14',
-        endDate: '2026-01-21',
-        platform: 'Devpost',
-        tags: ['React', 'Frontend', 'TypeScript'],
-        url: 'https://devpost.com/hackathons',
-        status: 'live',
+        id: 'hack-he-2',
+        name: 'IBM Quantum Challenge',
+        startDate: '2026-02-01',
+        endDate: '2026-02-10',
+        platform: 'HackerEarth',
+        tags: ['Quantum', 'Research', 'Python'],
+        url: 'https://hackerearth.com',
+        status: 'upcoming',
+        description: 'Explore the frontiers of quantum computing with IBM.',
     },
 
-    // Ending Soon
+    // Devpost
     {
-        id: 'hack-7',
-        name: 'Sustainability Hack',
-        startDate: '2026-01-08',
-        endDate: '2026-01-16',
+        id: 'hack-dp-1',
+        name: 'Google Cloud Hackathon',
+        startDate: '2026-03-01',
+        endDate: '2026-03-03',
+        platform: 'Devpost',
+        tags: ['Cloud', 'ML', 'GCP'],
+        url: 'https://devpost.com/hackathons',
+        status: 'upcoming',
+        description: 'Build scalable applications using Google Cloud Platform.',
+    },
+    {
+        id: 'hack-dp-2',
+        name: 'Gamers Unite',
+        startDate: '2026-01-15',
+        endDate: '2026-01-25',
+        platform: 'Devpost',
+        tags: ['GameDev', 'Unity', 'Unreal'],
+        url: 'https://devpost.com',
+        status: 'live',
+        description: 'Create the next indie game hit.',
+    },
+
+    // MLH
+    {
+        id: 'hack-mlh-1',
+        name: 'HackMIT 2026',
+        startDate: '2026-02-20',
+        endDate: '2026-02-22',
         platform: 'MLH',
-        tags: ['CleanTech', 'IoT', 'Sustainability'],
-        url: 'https://mlh.io/seasons/2026/events',
-        status: 'ending-soon',
+        tags: ['AI', 'Full Stack', 'Open Innovation'],
+        url: 'https://hackmit.org',
+        status: 'upcoming',
+        description: 'One of the most prestigious student hackathons.',
     },
+
+    // Other
     {
-        id: 'hack-8',
-        name: 'HealthTech Innovation',
-        startDate: '2026-01-05',
-        endDate: '2026-01-15',
-        platform: 'Devfolio',
-        tags: ['Healthcare', 'AI', 'Mobile'],
-        url: 'https://devfolio.co',
-        status: 'ending-soon',
-    },
-    {
-        id: 'hack-9',
+        id: 'hack-other-1',
         name: 'GameDev Jam',
         startDate: '2026-01-10',
         endDate: '2026-01-17',
@@ -95,6 +146,7 @@ export const mockHackathons: Hackathon[] = [
         tags: ['Gaming', 'Unity', 'Godot'],
         url: 'https://itch.io/jams',
         status: 'ending-soon',
+        description: 'A 7-day game jam for indie developers.',
     },
 ];
 
