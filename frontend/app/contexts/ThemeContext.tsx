@@ -16,12 +16,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        // Only run on client side
+        if (typeof window === 'undefined') return;
+
         // Check local storage or system preference on mount
         const savedTheme = localStorage.getItem('theme') as Theme;
         if (savedTheme) {
             setTheme(savedTheme);
             document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        } else if (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches) {
             setTheme('dark');
             document.documentElement.classList.add('dark');
         } else {

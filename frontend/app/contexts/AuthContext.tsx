@@ -43,13 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const { data: { session } } = await supabase.auth.getSession();
                 setSession(session);
                 setUser(session?.user ?? null);
+                // Set loading false immediately so pages can render
+                setLoading(false);
 
+                // Fetch profile in background (non-blocking)
                 if (session?.user) {
-                    await fetchProfile(session.user.id);
+                    fetchProfile(session.user.id);
                 }
             } catch (error) {
                 console.error('Error initializing auth:', error);
-            } finally {
                 setLoading(false);
             }
         };

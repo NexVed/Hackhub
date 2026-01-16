@@ -209,7 +209,7 @@ export default function CompleteProfilePage() {
 
                 // Use window.location for guaranteed redirect
                 console.log('🔄 Redirecting to /discover...');
-                window.location.href = '/discover';
+                router.push('/discover');
             } else {
                 console.error('❌ Failed to update profile:', error);
                 if (error?.code === '23505' || error?.message?.includes('username')) {
