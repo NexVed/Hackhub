@@ -1,11 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Hackathon } from '../../types/hackathon';
 import { getCountdown, getDaysUntilStart } from '../../data/mockHackathons';
+import { Plus, Check, Loader2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { registerForHackathon, isRegisteredForHackathon } from '@/lib/userHackathonService';
 
 interface HackathonCardProps {
     hackathon: Hackathon;
-    onDragStart: (e: React.DragEvent, hackathon: Hackathon) => void;
+    onRegister?: (id: string) => void;
 }
 
 const platformColors: Record<Hackathon['platform'], string> = {
@@ -25,9 +29,62 @@ const statusIndicators: Record<Hackathon['status'], { bg: string; label: string 
     'ending-soon': { bg: 'bg-orange-500', label: 'Ending Soon' },
 };
 
-export default function HackathonCard({ hackathon, onRegister }: { hackathon: Hackathon; onRegister?: (id: string) => void }) {
+export default function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
+    const { user } = useAuth();
+    const [registering, setRegistering] = useState(false);
+    const [registered, setRegistered] = useState(false);
+    const [checking, setChecking] = useState(false);
+
+    // Check if already registered on mount
+    useEffect(() => {
+        async function checkRegistration() {
+            if (!user?.id) return;
+            setChecking(true);
+            try {
+                const isRegistered = await isRegisteredForHackathon(user.id, hackathon.id);
+                setRegistered(isRegistered);
+            } catch (error) {
+                console.error('Error checking registration:', error);
+            } finally {
+                setChecking(false);
+            }
+        }
+        checkRegistration();
+    }, [user?.id, hackathon.id]);
+
+    const handleRegister = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!user?.id || registering || registered) return;
+
+        setRegistering(true);
+        try {
+            const result = await registerForHackathon(user.id, {
+                hackathon_id: hackathon.id,
+                hackathon_name: hackathon.name,
+                hackathon_url: hackathon.url,
+                platform: hackathon.platform,
+                tags: hackathon.tags || [],
+                start_date: hackathon.startDate,
+                end_date: hackathon.endDate,
+                status: 'planned',
+            });
+
+            if (result.success) {
+                setRegistered(true);
+                onRegister?.(hackathon.id);
+            } else {
+                console.error('Registration failed:', result.error);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+        } finally {
+            setRegistering(false);
+        }
+    };
+
     const handleClick = (e: React.MouseEvent) => {
-        // Prevent navigation if clicking the register button
         if ((e.target as HTMLElement).closest('button')) {
             e.preventDefault();
             return;
@@ -97,18 +154,39 @@ export default function HackathonCard({ hackathon, onRegister }: { hackathon: Ha
                     ))}
                 </div>
 
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRegister?.(hackathon.id);
-                    }}
-                    className="flex-none flex items-center gap-1.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
-                >
-                    <span>Register</span>
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
+                {/* Track/Register button */}
+                {user ? (
+                    <button
+                        onClick={handleRegister}
+                        disabled={registering || registered || checking}
+                        className={`flex-none flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm ${registered
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : 'bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900'
+                            }`}
+                    >
+                        {registering || checking ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : registered ? (
+                            <Check className="w-3 h-3" />
+                        ) : (
+                            <Plus className="w-3 h-3" />
+                        )}
+                        <span>{checking ? '...' : registered ? 'Tracked' : 'Track'}</span>
+                    </button>
+                ) : (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(hackathon.url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="flex-none flex items-center gap-1.5 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                    >
+                        <span>Register</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                )}
             </div>
         </div>
     );

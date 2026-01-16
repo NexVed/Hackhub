@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import activityRoutes from './routes/activities.js';
+import hackathonRoutes from './routes/hackathons.js';
 
 dotenv.config();
 
@@ -24,7 +25,8 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         endpoints: {
             auth: '/api/auth',
-            activities: '/api/activities'
+            activities: '/api/activities',
+            hackathons: '/api/hackathons'
         }
     });
 });
@@ -34,6 +36,9 @@ app.use('/api/auth', authRoutes);
 
 // Activity Routes
 app.use('/api/activities', activityRoutes);
+
+// Hackathon Routes
+app.use('/api/hackathons', hackathonRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

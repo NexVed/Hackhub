@@ -33,15 +33,16 @@ export default function ActivityHeatmap({ data, loading = false }: ActivityHeatm
     // Build calendar data - exactly 53 weeks like GitHub/LeetCode
     const { weeks, monthLabels } = useMemo(() => {
         const today = new Date();
-        today.setHours(12, 0, 0, 0); // Normalize to noon to avoid timezone issues
+        // Use UTC noon to properly align with DB dates (which are YYYY-MM-DD stored as UTC)
+        today.setUTCHours(12, 0, 0, 0);
 
-        // Start from 52 weeks ago, adjusted to start on Sunday
+        // Start from 52 weeks ago
         const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 364);
+        startDate.setUTCDate(today.getUTCDate() - 364);
 
         // Adjust to start from the nearest Sunday (going back)
-        const dayOfWeek = startDate.getDay();
-        startDate.setDate(startDate.getDate() - dayOfWeek);
+        const dayOfWeek = startDate.getUTCDay();
+        startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
 
         const weeksData: CalendarDay[][] = [];
         const monthPositions: { month: string; weekIndex: number }[] = [];
@@ -63,9 +64,9 @@ export default function ActivityHeatmap({ data, loading = false }: ActivityHeatm
                         dayOfMonth: 0
                     });
                 } else {
-                    const dateStr = currentDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-                    const month = currentDate.getMonth();
-                    const dayOfMonth = currentDate.getDate();
+                    const dateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD UTC
+                    const month = currentDate.getUTCMonth();
+                    const dayOfMonth = currentDate.getUTCDate();
 
                     // Check for new month at the start of a week
                     if (day === 0 && month !== currentMonth) {
@@ -97,7 +98,7 @@ export default function ActivityHeatmap({ data, loading = false }: ActivityHeatm
                     });
                 }
 
-                currentDate.setDate(currentDate.getDate() + 1);
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
             }
 
             weeksData.push(week);
@@ -198,8 +199,8 @@ export default function ActivityHeatmap({ data, loading = false }: ActivityHeatm
                                     <div
                                         key={`${weekIndex}-${dayIndex}`}
                                         className={`rounded-sm transition-all duration-150 ${day.date
-                                                ? `${levelColors[day.level]} cursor-pointer hover:ring-1 hover:ring-zinc-400 dark:hover:ring-zinc-500`
-                                                : 'bg-transparent'
+                                            ? `${levelColors[day.level]} cursor-pointer hover:ring-1 hover:ring-zinc-400 dark:hover:ring-zinc-500`
+                                            : 'bg-transparent'
                                             }`}
                                         style={{ width: CELL_SIZE, height: CELL_SIZE }}
                                         onMouseEnter={(e) => handleMouseEnter(e, day)}

@@ -7,15 +7,45 @@ import { TopBar } from '../components/TopBar';
 import UserProfile from '../components/dashboard/UserProfile';
 import ActivityHeatmap from '../components/dashboard/ActivityHeatmap';
 import WorkflowBoard from '../components/dashboard/WorkflowBoard';
-import { mockUser, mockUserHackathons, UserHackathonWorkflow } from '../data/mockUserData';
+import { mockUser, UserHackathonWorkflow } from '../data/mockUserData';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserActivities, logActivity, ActivityDay } from '@/lib/activityService';
+import { getUserHackathons, updateUserHackathon, removeUserHackathon, UserHackathon } from '@/lib/userHackathonService';
+
+// Convert UserHackathon from DB to UserHackathonWorkflow for UI
+function toWorkflowFormat(h: UserHackathon): UserHackathonWorkflow {
+    return {
+        id: h.id,
+        name: h.hackathon_name,
+        startDate: h.start_date || '',
+        endDate: h.end_date || '',
+        platform: h.platform || '',
+        tags: h.tags || [],
+        url: h.hackathon_url || '',
+        status: h.status,
+        progress: h.progress,
+        result: h.result ? h.result.charAt(0).toUpperCase() + h.result.slice(1) : undefined,
+    };
+}
 
 export default function DashboardPage() {
-    const { user } = useAuth();
-    const [hackathons, setHackathons] = useState<UserHackathonWorkflow[]>(mockUserHackathons);
+    const { user, profile } = useAuth();
+    const [hackathons, setHackathons] = useState<UserHackathonWorkflow[]>([]);
     const [activities, setActivities] = useState<ActivityDay[]>([]);
     const [loadingActivities, setLoadingActivities] = useState(true);
+    const [loadingHackathons, setLoadingHackathons] = useState(true);
+
+    // Fetch user hackathons on mount
+    useEffect(() => {
+        async function fetchHackathons() {
+            if (user?.id) {
+                const data = await getUserHackathons(user.id);
+                setHackathons(data.map(toWorkflowFormat));
+            }
+            setLoadingHackathons(false);
+        }
+        fetchHackathons();
+    }, [user?.id]);
 
     // Fetch user activities on mount
     useEffect(() => {
@@ -24,7 +54,6 @@ export default function DashboardPage() {
                 const data = await getUserActivities(user.id);
                 setActivities(data);
             } else {
-                // Use mock data for non-logged in users
                 const mockData = await getUserActivities('');
                 setActivities(mockData);
             }
@@ -36,57 +65,67 @@ export default function DashboardPage() {
     const handleUpdateStatus = useCallback(async (id: string, newStatus: UserHackathonWorkflow['status']) => {
         const hackathon = hackathons.find(h => h.id === id);
 
+        // Calculate new progress and result
+        let newProgress = hackathon?.progress || 0;
+        let newResult: string | undefined = hackathon?.result;
+
+        if (newStatus === 'active' && !newProgress) {
+            newProgress = 10;
+        }
+        if (newStatus === 'completed') {
+            newProgress = 100;
+            if (!newResult) {
+                newResult = 'Participated';
+            }
+        }
+
+        // Update local state immediately for responsive UI
         setHackathons((prev) =>
             prev.map((h) => {
                 if (h.id === id) {
-                    const updated: UserHackathonWorkflow = { ...h, status: newStatus };
-
-                    // Update progress based on status
-                    if (newStatus === 'active' && !updated.progress) {
-                        updated.progress = 10;
-                    }
-                    if (newStatus === 'completed') {
-                        updated.progress = 100;
-                        if (!updated.result) {
-                            updated.result = 'Participated';
-                        }
-                    }
-
-                    return updated;
+                    return { ...h, status: newStatus, progress: newProgress, result: newResult };
                 }
                 return h;
             })
         );
 
-        // Log activity based on status change
-        if (user?.id && hackathon) {
-            let activityType: 'hackathon_register' | 'hackathon_progress' | 'hackathon_submit' = 'hackathon_progress';
-            let description = `Updated ${hackathon.name}`;
+        // Save to database
+        await updateUserHackathon(id, {
+            status: newStatus,
+            progress: newProgress,
+            result: newResult?.toLowerCase() as 'winner' | 'finalist' | 'participated' | undefined
+        });
 
-            if (newStatus === 'active') {
-                activityType = 'hackathon_progress';
-                description = `Started working on ${hackathon.name}`;
-            } else if (newStatus === 'completed') {
-                activityType = 'hackathon_submit';
-                description = `Completed ${hackathon.name}`;
-            }
-
-            await logActivity(user.id, activityType, description, id);
-
-            // Refresh activities
+        // Refresh activities
+        if (user?.id) {
             const data = await getUserActivities(user.id);
             setActivities(data);
         }
     }, [hackathons, user?.id]);
 
-    // Create user profile from auth data
+    // Handle remove hackathon
+    const handleRemove = useCallback(async (id: string) => {
+        // Remove from local state immediately
+        setHackathons(prev => prev.filter(h => h.id !== id));
+
+        // Remove from database
+        await removeUserHackathon(id);
+    }, []);
+
+    // Create user profile from auth data AND database profile
     const userProfile = user ? {
         id: user.id,
-        name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-        username: `@${user.user_metadata?.preferred_username || user.email?.split('@')[0] || 'user'}`,
-        bio: 'Hackathon enthusiast',
-        avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
-        social: {}
+        name: profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        username: profile?.username ? `@${profile.username}` : `@${user.user_metadata?.preferred_username || user.email?.split('@')[0] || 'user'}`,
+        bio: profile?.bio || profile?.headline || 'Hackathon enthusiast',
+        avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+        social: {
+            github: profile?.social_github || undefined,
+            linkedin: profile?.social_linkedin || undefined,
+            twitter: profile?.social_twitter || undefined,
+            instagram: profile?.social_instagram || undefined,
+            threads: profile?.social_threads || undefined,
+        }
     } : mockUser;
 
     return (
@@ -119,6 +158,8 @@ export default function DashboardPage() {
                         <WorkflowBoard
                             hackathons={hackathons}
                             onUpdateStatus={handleUpdateStatus}
+                            onRemove={handleRemove}
+                            loading={loadingHackathons}
                         />
                     </div>
                 </div>
@@ -126,4 +167,3 @@ export default function DashboardPage() {
         </SidebarProvider>
     );
 }
-

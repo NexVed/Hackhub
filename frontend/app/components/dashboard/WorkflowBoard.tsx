@@ -7,6 +7,8 @@ import WorkflowCard from './WorkflowCard';
 interface WorkflowBoardProps {
     hackathons: UserHackathonWorkflow[];
     onUpdateStatus: (id: string, newStatus: UserHackathonWorkflow['status']) => void;
+    onRemove?: (id: string) => void;
+    loading?: boolean;
 }
 
 const columns: { status: UserHackathonWorkflow['status']; title: string; description: string; accentColor: string }[] = [
@@ -30,7 +32,7 @@ const columns: { status: UserHackathonWorkflow['status']; title: string; descrip
     },
 ];
 
-export default function WorkflowBoard({ hackathons, onUpdateStatus }: WorkflowBoardProps) {
+export default function WorkflowBoard({ hackathons, onUpdateStatus, onRemove }: WorkflowBoardProps) {
     const [activeDropZone, setActiveDropZone] = useState<UserHackathonWorkflow['status'] | null>(null);
     const [draggedItem, setDraggedItem] = useState<UserHackathonWorkflow | null>(null);
 
@@ -101,8 +103,8 @@ export default function WorkflowBoard({ hackathons, onUpdateStatus }: WorkflowBo
                         <div
                             key={col.status}
                             className={`flex flex-col rounded-xl border transition-all duration-200 ${isDropTarget
-                                    ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/10'
-                                    : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50'
+                                ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/10'
+                                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50'
                                 }`}
                             onDragOver={(e) => handleDragOver(e, col.status)}
                             onDragLeave={handleDragLeave}
@@ -143,6 +145,7 @@ export default function WorkflowBoard({ hackathons, onUpdateStatus }: WorkflowBo
                                             key={hackathon.id}
                                             hackathon={hackathon}
                                             onDragStart={handleDragStart}
+                                            onRemove={onRemove}
                                         />
                                     ))
                                 )}

@@ -3,6 +3,7 @@
 import { X, ExternalLink, Calendar, Building2, Tag } from 'lucide-react';
 import { Hackathon } from '../../types/hackathon';
 import { FlagshipHackathon, getStatusColor, getStatusLabel } from '../../data/flagshipHackathons';
+import BrandIcon from '../ui/BrandIcon';
 
 interface HackathonDetailModalProps {
     hackathon: Hackathon | FlagshipHackathon | null;
@@ -54,10 +55,12 @@ export default function HackathonDetailModal({ hackathon, isOpen, onClose }: Hac
 
                     {/* Header */}
                     <div className="flex items-start gap-4 mb-4">
-                        {/* Logo placeholder */}
-                        <div className={`flex items-center justify-center w-14 h-14 rounded-xl ${isFlagship ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-600'} text-xl font-bold text-white`}>
-                            {organizer.charAt(0)}
-                        </div>
+                        {/* Brand logo using svgl icons */}
+                        <BrandIcon
+                            organizer={organizer}
+                            size="lg"
+                            className={`rounded-xl p-2 ${isFlagship ? 'bg-gradient-to-br from-violet-500/10 to-purple-600/10' : 'bg-gradient-to-br from-zinc-200/50 to-zinc-300/50 dark:from-zinc-700/50 dark:to-zinc-600/50'}`}
+                        />
 
                         <div className="flex-1 min-w-0 pr-8">
                             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
@@ -123,8 +126,8 @@ export default function HackathonDetailModal({ hackathon, isOpen, onClose }: Hac
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 ${isFlagship
-                                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/20'
-                                : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200'
+                            ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/20'
+                            : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200'
                             }`}
                     >
                         Visit Official Site

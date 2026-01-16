@@ -5,7 +5,9 @@ export type ActivityType =
     | 'hackathon_progress'
     | 'hackathon_submit'
     | 'github_commit'
-    | 'leetcode_solve';
+    | 'leetcode_solve'
+    | 'team_create'
+    | 'team_join';
 
 export interface Activity {
     id: string;
@@ -52,6 +54,7 @@ export async function getUserActivities(userId: string): Promise<ActivityDay[]> 
             return generateMockActivities();
         }
 
+        console.log('Fetched activities from DB:', data?.length);
         return aggregateActivities(data || []);
     } catch (error) {
         console.error('Error fetching activities:', error);
@@ -124,9 +127,9 @@ function aggregateActivities(rawActivities: any[]): ActivityDay[] {
 
         if (uniqueTypes >= 3 || activities.length >= 4) {
             day.level = 4;
-        } else if (hasSubmit || uniqueTypes >= 2) {
+        } else if (hasSubmit || uniqueTypes >= 2 || activities.some(a => a.type === 'team_create')) {
             day.level = 3;
-        } else if (hasProgress || activities.length >= 2) {
+        } else if (hasProgress || activities.length >= 2 || activities.some(a => a.type === 'team_join')) {
             day.level = 2;
         } else if (activities.length >= 1) {
             day.level = 1;
@@ -184,7 +187,9 @@ function getDefaultDescription(type: ActivityType): string {
         'hackathon_progress': 'Updated project progress',
         'hackathon_submit': 'Submitted project',
         'github_commit': 'GitHub contribution',
-        'leetcode_solve': 'Solved coding problem'
+        'leetcode_solve': 'Solved coding problem',
+        'team_create': 'Created a team',
+        'team_join': 'Joined a team'
     };
     return descriptions[type] || 'Activity logged';
 }
