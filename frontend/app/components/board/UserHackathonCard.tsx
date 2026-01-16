@@ -10,7 +10,10 @@ interface UserHackathonCardProps {
 }
 
 const platformColors: Record<UserHackathon['platform'], string> = {
+    Unstop: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
     Devfolio: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    Devnovate: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+    Hack2Skill: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
     MLH: 'bg-red-500/10 text-red-600 dark:text-red-400',
     Devpost: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     HackerEarth: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',

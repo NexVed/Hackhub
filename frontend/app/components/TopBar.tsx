@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import ThemeToggle from './ThemeToggle';
 
 interface TopBarProps {
     children?: React.ReactNode;
@@ -33,9 +34,10 @@ export function TopBar({ children }: TopBarProps) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground hidden md:inline-block">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                 </span>
+                <ThemeToggle />
                 {children}
             </div>
         </header>

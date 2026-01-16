@@ -1,16 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { ActivityDay } from '../../data/mockUserData';
+import { useState, useMemo } from 'react';
+import { ActivityDay } from '@/lib/activityService';
 
 interface ActivityHeatmapProps {
     data: ActivityDay[];
+    loading?: boolean;
 }
 
-const CELL_SIZE = 12;
-const CELL_GAP = 3;
-const WEEKS_TO_SHOW = 52;
-const ROW_HEIGHT = CELL_SIZE + CELL_GAP;
+const CELL_SIZE = 11;
+const CELL_GAP = 2;
 
 const levelColors = [
     'bg-zinc-100 dark:bg-zinc-800',
@@ -20,67 +19,98 @@ const levelColors = [
     'bg-emerald-600 dark:bg-emerald-400',
 ];
 
-export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
+interface CalendarDay {
+    date: string;
+    level: 0 | 1 | 2 | 3 | 4;
+    description?: string;
+    month: number;
+    dayOfMonth: number;
+}
+
+export default function ActivityHeatmap({ data, loading = false }: ActivityHeatmapProps) {
     const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
 
-    // Group data by weeks
-    const getWeeksData = () => {
-        const weeks: ActivityDay[][] = [];
+    // Build calendar data - exactly 53 weeks like GitHub/LeetCode
+    const { weeks, monthLabels } = useMemo(() => {
         const today = new Date();
+        today.setHours(12, 0, 0, 0); // Normalize to noon to avoid timezone issues
 
-        // Calculate start date: roughly 1 year ago
+        // Start from 52 weeks ago, adjusted to start on Sunday
         const startDate = new Date(today);
-        startDate.setDate(today.getDate() - (WEEKS_TO_SHOW * 7));
+        startDate.setDate(today.getDate() - 364);
 
-        // Adjust to start on Sunday
+        // Adjust to start from the nearest Sunday (going back)
         const dayOfWeek = startDate.getDay();
         startDate.setDate(startDate.getDate() - dayOfWeek);
 
-        let currentWeek: ActivityDay[] = [];
+        const weeksData: CalendarDay[][] = [];
+        const monthPositions: { month: string; weekIndex: number }[] = [];
 
-        // Iterate day by day from startDate
-        // Use a safety break to prevent infinite loops, cover ample range
-        const maxDays = (WEEKS_TO_SHOW + 2) * 7;
+        let currentMonth = -1;
+        let currentDate = new Date(startDate);
 
-        for (let i = 0; i < maxDays; i++) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + i);
+        // Generate all weeks
+        while (currentDate <= today) {
+            const week: CalendarDay[] = [];
 
-            // Stop if we have gone past today
-            if (currentDate > today) break;
+            for (let day = 0; day < 7; day++) {
+                if (currentDate > today) {
+                    // Future dates - add empty placeholder
+                    week.push({
+                        date: '',
+                        level: 0,
+                        month: -1,
+                        dayOfMonth: 0
+                    });
+                } else {
+                    const dateStr = currentDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                    const month = currentDate.getMonth();
+                    const dayOfMonth = currentDate.getDate();
 
-            // Use local date string YYYY-MM-DD to match the mock data format (e.g. '2026-01-15')
-            // 'en-CA' prints YYYY-MM-DD in local time
-            const dateStr = currentDate.toLocaleDateString('en-CA');
+                    // Check for new month at the start of a week
+                    if (day === 0 && month !== currentMonth) {
+                        currentMonth = month;
+                        monthPositions.push({
+                            month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+                            weekIndex: weeksData.length
+                        });
+                    }
 
-            const dayData = data.find(a => a.date === dateStr) || { date: dateStr, level: 0 as const };
+                    // Also check if 1st of month appears mid-week
+                    if (dayOfMonth === 1 && day > 0 && month !== currentMonth) {
+                        currentMonth = month;
+                        monthPositions.push({
+                            month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+                            weekIndex: weeksData.length
+                        });
+                    }
 
-            currentWeek.push(dayData);
+                    // Find matching activity data
+                    const activityData = data.find(a => a.date === dateStr);
 
-            if (currentWeek.length === 7) {
-                weeks.push(currentWeek);
-                currentWeek = [];
+                    week.push({
+                        date: dateStr,
+                        level: activityData?.level || 0,
+                        description: activityData?.description,
+                        month,
+                        dayOfMonth
+                    });
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
             }
+
+            weeksData.push(week);
         }
 
-        // Push remaining partial week
-        if (currentWeek.length > 0) {
-            weeks.push(currentWeek);
-        }
+        return { weeks: weeksData, monthLabels: monthPositions };
+    }, [data]);
 
-        return weeks;
-    };
+    const handleMouseEnter = (e: React.MouseEvent, day: CalendarDay) => {
+        if (!day.date) return;
 
-    const weeks = getWeeksData();
-
-    const handleMouseEnter = (e: React.MouseEvent, day: ActivityDay) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        const date = new Date(day.date);
-        // Be careful with parsing the date string "YYYY-MM-DD" back to Date
-        // standard Date("YYYY-MM-DD") is UTC. We want to display it as is.
-        // simpler: parse the parts manually or append T12:00:00 to force mid-day local roughly
-        // actually, toLocaleDateString of a standard parsed "2024-01-01" will result in "Dec 31" if we are behind UTC.
-        // user is +05:30 ahead, so "2024-01-01" (UTC) is "2024-01-01 05:30" (Local) -> Correct day.
+        const date = new Date(day.date + 'T12:00:00');
 
         const formattedDate = date.toLocaleDateString('en-US', {
             weekday: 'short',
@@ -102,23 +132,20 @@ export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
         setTooltip(null);
     };
 
-    // Helper to check if a week starts a new month
-    const isNewMonth = (weekIndex: number) => {
-        if (weekIndex === 0) return true;
-        const currentWeekStart = new Date(weeks[weekIndex][0].date);
-        const prevWeekStart = new Date(weeks[weekIndex - 1][0].date);
-        return currentWeekStart.getMonth() !== prevWeekStart.getMonth();
-    };
-
-    // Helper to get month label
-    const getMonthLabel = (weekIndex: number) => {
-        const date = new Date(weeks[weekIndex][0].date);
-        return date.toLocaleDateString('en-US', { month: 'short' });
-    };
+    if (loading) {
+        return (
+            <div className="p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <div className="animate-pulse">
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-20 mb-4"></div>
+                    <div className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Activity</h3>
                 <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                     <span>Less</span>
@@ -132,72 +159,55 @@ export default function ActivityHeatmap({ data }: ActivityHeatmapProps) {
                 </div>
             </div>
 
+            {/* Month Labels Row */}
+            <div className="flex mb-1 ml-8">
+                <div className="flex" style={{ gap: CELL_GAP }}>
+                    {weeks.map((_, weekIndex) => {
+                        const monthInfo = monthLabels.find(m => m.weekIndex === weekIndex);
+                        return (
+                            <div
+                                key={weekIndex}
+                                style={{ width: CELL_SIZE }}
+                                className="text-[10px] text-zinc-500 dark:text-zinc-400"
+                            >
+                                {monthInfo?.month || ''}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             <div className="flex">
-                {/* Day labels (Fixed Left) */}
-                {/* Matches the top offset of the grid cells (Label height 20px + margin 4px = 24px) */}
-                <div className="flex flex-col pr-3 mt-[24px] text-[10px] text-zinc-400 dark:text-zinc-500 font-medium select-none">
-                    {/* Sunday (Index 0) - Spacer */}
-                    <div style={{ height: ROW_HEIGHT }} />
-
-                    {/* Monday (Index 1) */}
-                    <div style={{ height: ROW_HEIGHT, display: 'flex', alignItems: 'center' }}>
-                        <span className="leading-none pt-[1px]">Mon</span>
-                    </div>
-
-                    {/* Tuesday (Index 2) - Spacer */}
-                    <div style={{ height: ROW_HEIGHT }} />
-
-                    {/* Wednesday (Index 3) */}
-                    <div style={{ height: ROW_HEIGHT, display: 'flex', alignItems: 'center' }}>
-                        <span className="leading-none pt-[1px]">Wed</span>
-                    </div>
-
-                    {/* Thursday (Index 4) - Spacer */}
-                    <div style={{ height: ROW_HEIGHT }} />
-
-                    {/* Friday (Index 5) */}
-                    <div style={{ height: ROW_HEIGHT, display: 'flex', alignItems: 'center' }}>
-                        <span className="leading-none pt-[1px]">Fri</span>
-                    </div>
+                {/* Day Labels */}
+                <div className="flex flex-col text-[10px] text-zinc-400 dark:text-zinc-500 pr-2">
+                    <div style={{ height: CELL_SIZE + CELL_GAP }}></div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }} className="flex items-center">Mon</div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }}></div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }} className="flex items-center">Wed</div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }}></div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }} className="flex items-center">Fri</div>
+                    <div style={{ height: CELL_SIZE + CELL_GAP }}></div>
                 </div>
 
-                {/* Scrollable Container */}
-                <div className="flex-1 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-700">
-                    {/* Gap between columns */}
-                    <div className="flex min-w-max" style={{ gap: CELL_GAP }}>
-                        {weeks.map((week, weekIndex) => {
-                            const showMonthLabel = isNewMonth(weekIndex);
-
-                            return (
-                                <div
-                                    key={weekIndex}
-                                    className={`flex flex-col ${showMonthLabel && weekIndex !== 0 ? 'ml-6' : ''}`}
-                                    style={{ gap: CELL_GAP }}
-                                >
-                                    {/* Month Label Header */}
-                                    <div className="h-5 mb-1 relative">
-                                        {showMonthLabel && (
-                                            <span className="absolute bottom-0 left-0 text-xs text-zinc-500 dark:text-zinc-400 font-medium whitespace-nowrap">
-                                                {getMonthLabel(weekIndex)}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Grid Cells */}
-                                    <div className="flex flex-col" style={{ gap: CELL_GAP }}>
-                                        {week.map((day, dayIndex) => (
-                                            <div
-                                                key={`${weekIndex}-${dayIndex}`}
-                                                className={`rounded-[2px] transition-colors duration-200 ${levelColors[day.level]} hover:ring-1 hover:ring-zinc-400 dark:hover:ring-zinc-600`}
-                                                style={{ width: CELL_SIZE, height: CELL_SIZE }}
-                                                onMouseEnter={(e) => handleMouseEnter(e, day)}
-                                                onMouseLeave={handleMouseLeave}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                {/* Calendar Grid */}
+                <div className="flex-1 overflow-x-auto">
+                    <div className="flex" style={{ gap: CELL_GAP }}>
+                        {weeks.map((week, weekIndex) => (
+                            <div key={weekIndex} className="flex flex-col" style={{ gap: CELL_GAP }}>
+                                {week.map((day, dayIndex) => (
+                                    <div
+                                        key={`${weekIndex}-${dayIndex}`}
+                                        className={`rounded-sm transition-all duration-150 ${day.date
+                                                ? `${levelColors[day.level]} cursor-pointer hover:ring-1 hover:ring-zinc-400 dark:hover:ring-zinc-500`
+                                                : 'bg-transparent'
+                                            }`}
+                                        style={{ width: CELL_SIZE, height: CELL_SIZE }}
+                                        onMouseEnter={(e) => handleMouseEnter(e, day)}
+                                        onMouseLeave={handleMouseLeave}
+                                    />
+                                ))}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
