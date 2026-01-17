@@ -7,15 +7,8 @@ import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
 import { Users, Plus, Search, Trophy, UserPlus, Settings, Copy, Check, Globe, Lock, Loader2, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import {
-    getMyTeams,
-    getPublicTeams,
-    createTeam,
-    joinByCode,
-    requestToJoin,
-    TeamWithMembers,
-    hasPendingRequest
-} from '@/lib/teamService';
+import { useTeamsStore } from '@/lib/stores';
+import { Team } from '@/lib/teamService';
 
 const statusColors = {
     active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -26,12 +19,21 @@ const statusColors = {
 export default function TeamsPage() {
     const router = useRouter();
     const { user } = useAuth();
-    const [myTeams, setMyTeams] = useState<TeamWithMembers[]>([]);
-    const [publicTeams, setPublicTeams] = useState<TeamWithMembers[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    // Use Zustand store for cached data
+    const {
+        myTeams,
+        publicTeams,
+        requestedTeamIds,
+        loading,
+        fetchTeams,
+        createTeam,
+        joinByCode,
+        requestToJoin
+    } = useTeamsStore();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'my' | 'discover'>('my');
-    const [requestedTeams, setRequestedTeams] = useState<Set<string>>(new Set());
 
     // Create team modal
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -48,46 +50,26 @@ export default function TeamsPage() {
     // Copied code
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-    // Fetch teams on mount
+    // Fetch teams on mount (will use cache if available)
     useEffect(() => {
-        async function fetchTeams() {
-            if (user?.id) {
-                const [my, pub] = await Promise.all([
-                    getMyTeams(user.id),
-                    getPublicTeams(user.id)
-                ]);
-                setMyTeams(my);
-                setPublicTeams(pub);
-
-                // Check which teams user has requested
-                const requested = new Set<string>();
-                for (const team of pub) {
-                    if (await hasPendingRequest(user.id, team.id)) {
-                        requested.add(team.id);
-                    }
-                }
-                setRequestedTeams(requested);
-            }
-            setLoading(false);
+        if (user?.id) {
+            fetchTeams(user.id);
         }
-        fetchTeams();
-    }, [user?.id]);
+    }, [user?.id, fetchTeams]);
 
     const handleCreateTeam = async () => {
         if (!user?.id || !createForm.name.trim()) return;
 
         setCreating(true);
-        const result = await createTeam(user.id, {
+        const team = await createTeam(user.id, {
             name: createForm.name,
             description: createForm.description,
             is_public: createForm.isPublic,
             status: 'recruiting',
         });
 
-        if (result.success && result.team) {
-            setCreatedTeam({ name: result.team.name, code: result.team.team_code || '' });
-            const teams = await getMyTeams(user.id);
-            setMyTeams(teams);
+        if (team) {
+            setCreatedTeam({ name: team.name, code: team.team_code || '' });
         }
         setCreating(false);
     };
@@ -101,8 +83,6 @@ export default function TeamsPage() {
         const result = await joinByCode(user.id, joinCode.trim());
 
         if (result.success) {
-            const teams = await getMyTeams(user.id);
-            setMyTeams(teams);
             setIsJoinOpen(false);
             setJoinCode('');
         } else {
@@ -113,11 +93,7 @@ export default function TeamsPage() {
 
     const handleRequestJoin = async (teamId: string) => {
         if (!user?.id) return;
-
-        const result = await requestToJoin(user.id, teamId);
-        if (result.success) {
-            setRequestedTeams(prev => new Set([...prev, teamId]));
-        }
+        await requestToJoin(user.id, teamId);
     };
 
     const copyCode = (code: string) => {
@@ -135,6 +111,9 @@ export default function TeamsPage() {
         team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (team.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     );
+
+    // Helper to check if team was requested
+    const hasRequested = (teamId: string) => requestedTeamIds.has(teamId);
 
     if (loading) {
         return (
@@ -224,7 +203,7 @@ export default function TeamsPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             {(activeTab === 'my' ? filteredMyTeams : filteredPublicTeams).map((team) => {
                                 const isOwner = team.owner_id === user?.id;
-                                const hasRequested = requestedTeams.has(team.id);
+                                const teamRequested = hasRequested(team.id);
 
                                 return (
                                     <div
@@ -326,13 +305,13 @@ export default function TeamsPage() {
                                             ) : activeTab === 'discover' ? (
                                                 <button
                                                     onClick={() => handleRequestJoin(team.id)}
-                                                    disabled={hasRequested}
-                                                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${hasRequested
+                                                    disabled={teamRequested}
+                                                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${teamRequested
                                                         ? 'bg-zinc-100 text-zinc-500 cursor-not-allowed dark:bg-zinc-800'
                                                         : 'bg-violet-600 hover:bg-violet-700 text-white'
                                                         }`}
                                                 >
-                                                    {hasRequested ? 'Request Sent' : <><UserPlus className="w-4 h-4" /> Request to Join</>}
+                                                    {teamRequested ? 'Request Sent' : <><UserPlus className="w-4 h-4" /> Request to Join</>}
                                                 </button>
                                             ) : (
                                                 <button

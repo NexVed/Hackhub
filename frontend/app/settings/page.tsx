@@ -83,9 +83,9 @@ export default function SettingsPage() {
         try {
             const result = await updateUserProfile(user.id, formData);
             if (result.success) {
+                // Await profile refresh so other pages see the update immediately
+                await refreshProfile?.();
                 setSaved(true);
-                // Refresh profile in background (non-blocking)
-                refreshProfile?.();
                 setTimeout(() => setSaved(false), 3000);
             } else {
                 console.error('Failed to save:', result.error);

@@ -6,7 +6,8 @@ import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
 import { Search, CheckCircle2, Clock, Target, Trophy, Medal, Award, Star, X, ExternalLink, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserHackathons, updateUserHackathon, removeUserHackathon, UserHackathon } from '@/lib/userHackathonService';
+import { useUserHackathonsStore } from '@/lib/stores';
+import { UserHackathon } from '@/lib/userHackathonService';
 
 const statusConfig = {
     planned: { label: 'Planned', color: 'bg-blue-500', icon: Target },
@@ -22,24 +23,27 @@ const resultOptions = [
 
 export default function MyHackathonsPage() {
     const { user } = useAuth();
-    const [hackathons, setHackathons] = useState<UserHackathon[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    // Use Zustand store for cached data
+    const {
+        hackathons,
+        loading,
+        fetchHackathons,
+        updateHackathon,
+        removeHackathon
+    } = useUserHackathonsStore();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [resultModal, setResultModal] = useState<{ hackathonId: string; hackathonName: string } | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // Fetch hackathons on mount
+    // Fetch hackathons on mount (will use cache if available)
     useEffect(() => {
-        async function fetchHackathons() {
-            if (user?.id) {
-                const data = await getUserHackathons(user.id);
-                setHackathons(data);
-            }
-            setLoading(false);
+        if (user?.id) {
+            fetchHackathons(user.id);
         }
-        fetchHackathons();
-    }, [user?.id]);
+    }, [user?.id, fetchHackathons]);
 
     const handleUpdateStatus = useCallback(async (id: string, newStatus: 'planned' | 'active' | 'completed') => {
         // If moving to completed, show the result modal
@@ -51,32 +55,20 @@ export default function MyHackathonsPage() {
             }
         }
 
-        // Update locally
-        setHackathons(prev => prev.map(h =>
-            h.id === id ? { ...h, status: newStatus, progress: newStatus === 'completed' ? 100 : (newStatus === 'active' ? 10 : 0) } : h
-        ));
-
-        // Save to database
-        await updateUserHackathon(id, {
+        // Update via store (handles optimistic update + API call)
+        await updateHackathon(id, {
             status: newStatus,
             progress: newStatus === 'completed' ? 100 : (newStatus === 'active' ? 10 : 0)
         });
-    }, [hackathons]);
+    }, [hackathons, updateHackathon]);
 
     const handleSetResult = useCallback(async (result: 'winner' | 'finalist' | 'participated') => {
         if (!resultModal) return;
 
         setSaving(true);
 
-        // Update locally
-        setHackathons(prev => prev.map(h =>
-            h.id === resultModal.hackathonId
-                ? { ...h, status: 'completed', progress: 100, result }
-                : h
-        ));
-
-        // Save to database
-        await updateUserHackathon(resultModal.hackathonId, {
+        // Update via store
+        await updateHackathon(resultModal.hackathonId, {
             status: 'completed',
             progress: 100,
             result
@@ -84,12 +76,11 @@ export default function MyHackathonsPage() {
 
         setSaving(false);
         setResultModal(null);
-    }, [resultModal]);
+    }, [resultModal, updateHackathon]);
 
     const handleRemove = useCallback(async (id: string) => {
-        setHackathons(prev => prev.filter(h => h.id !== id));
-        await removeUserHackathon(id);
-    }, []);
+        await removeHackathon(id);
+    }, [removeHackathon]);
 
     const filteredHackathons = hackathons.filter((h) => {
         const matchesSearch = h.hackathon_name.toLowerCase().includes(searchQuery.toLowerCase());

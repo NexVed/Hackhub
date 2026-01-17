@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
@@ -9,8 +9,8 @@ import ActivityHeatmap from '../components/dashboard/ActivityHeatmap';
 import WorkflowBoard from '../components/dashboard/WorkflowBoard';
 import { mockUser, UserHackathonWorkflow } from '../data/mockUserData';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserActivities, logActivity, ActivityDay } from '@/lib/activityService';
-import { getUserHackathons, updateUserHackathon, removeUserHackathon, UserHackathon } from '@/lib/userHackathonService';
+import { useUserHackathonsStore, useActivitiesStore } from '@/lib/stores';
+import { UserHackathon } from '@/lib/userHackathonService';
 
 // Convert UserHackathon from DB to UserHackathonWorkflow for UI
 function toWorkflowFormat(h: UserHackathon): UserHackathonWorkflow {
@@ -30,44 +30,52 @@ function toWorkflowFormat(h: UserHackathon): UserHackathonWorkflow {
 
 export default function DashboardPage() {
     const { user, profile } = useAuth();
-    const [hackathons, setHackathons] = useState<UserHackathonWorkflow[]>([]);
-    const [activities, setActivities] = useState<ActivityDay[]>([]);
-    const [loadingActivities, setLoadingActivities] = useState(true);
-    const [loadingHackathons, setLoadingHackathons] = useState(true);
 
-    // Fetch user hackathons on mount
-    useEffect(() => {
-        async function fetchHackathons() {
-            if (user?.id) {
-                const data = await getUserHackathons(user.id);
-                setHackathons(data.map(toWorkflowFormat));
-            }
-            setLoadingHackathons(false);
-        }
-        fetchHackathons();
-    }, [user?.id]);
+    // Use Zustand stores for cached data
+    const {
+        hackathons: rawHackathons,
+        loading: loadingHackathons,
+        fetchHackathons,
+        updateHackathon,
+        removeHackathon
+    } = useUserHackathonsStore();
 
-    // Fetch user activities on mount
+    const {
+        activities,
+        loading: loadingActivities,
+        fetchActivities,
+        invalidate: invalidateActivities,
+        lastFetched: activitiesLastFetched
+    } = useActivitiesStore();
+
+    // Convert to workflow format for UI
+    const hackathons = rawHackathons.map(toWorkflowFormat);
+
+    // Fetch data on mount (will use cache if available)
     useEffect(() => {
-        async function fetchActivities() {
-            if (user?.id) {
-                const data = await getUserActivities(user.id);
-                setActivities(data);
-            } else {
-                const mockData = await getUserActivities('');
-                setActivities(mockData);
-            }
-            setLoadingActivities(false);
+        if (user?.id) {
+            fetchHackathons(user.id);
+            fetchActivities(user.id);
+        } else {
+            // Fetch mock activities for non-logged in users
+            fetchActivities('');
         }
-        fetchActivities();
-    }, [user?.id]);
+    }, [user?.id, fetchHackathons, fetchActivities]);
+
+    // Check if activities were invalidated and need refresh
+    // This runs when navigating back to dashboard after changes on other pages
+    useEffect(() => {
+        if (user?.id && activitiesLastFetched === null) {
+            fetchActivities(user.id, true);
+        }
+    }, [user?.id, activitiesLastFetched, fetchActivities]);
 
     const handleUpdateStatus = useCallback(async (id: string, newStatus: UserHackathonWorkflow['status']) => {
-        const hackathon = hackathons.find(h => h.id === id);
+        const hackathon = rawHackathons.find(h => h.id === id);
 
         // Calculate new progress and result
         let newProgress = hackathon?.progress || 0;
-        let newResult: string | undefined = hackathon?.result;
+        let newResult: 'winner' | 'finalist' | 'participated' | undefined = hackathon?.result;
 
         if (newStatus === 'active' && !newProgress) {
             newProgress = 10;
@@ -75,42 +83,28 @@ export default function DashboardPage() {
         if (newStatus === 'completed') {
             newProgress = 100;
             if (!newResult) {
-                newResult = 'Participated';
+                newResult = 'participated';
             }
         }
 
-        // Update local state immediately for responsive UI
-        setHackathons((prev) =>
-            prev.map((h) => {
-                if (h.id === id) {
-                    return { ...h, status: newStatus, progress: newProgress, result: newResult };
-                }
-                return h;
-            })
-        );
-
-        // Save to database
-        await updateUserHackathon(id, {
+        // Update via store (handles optimistic update + API call)
+        await updateHackathon(id, {
             status: newStatus,
             progress: newProgress,
-            result: newResult?.toLowerCase() as 'winner' | 'finalist' | 'participated' | undefined
+            result: newResult
         });
 
-        // Refresh activities
+        // Invalidate activities to refresh after mutation
         if (user?.id) {
-            const data = await getUserActivities(user.id);
-            setActivities(data);
+            invalidateActivities();
+            fetchActivities(user.id, true);
         }
-    }, [hackathons, user?.id]);
+    }, [rawHackathons, user?.id, updateHackathon, invalidateActivities, fetchActivities]);
 
     // Handle remove hackathon
     const handleRemove = useCallback(async (id: string) => {
-        // Remove from local state immediately
-        setHackathons(prev => prev.filter(h => h.id !== id));
-
-        // Remove from database
-        await removeUserHackathon(id);
-    }, []);
+        await removeHackathon(id);
+    }, [removeHackathon]);
 
     // Create user profile from auth data AND database profile
     const userProfile = user ? {

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Hackathon } from '../../types/hackathon';
 import { getCountdown, getDaysUntilStart } from '../../data/mockHackathons';
 import { Plus, Check, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { registerForHackathon, isRegisteredForHackathon } from '@/lib/userHackathonService';
+import { useUserHackathonsStore } from '@/lib/stores';
 
 interface HackathonCardProps {
     hackathon: Hackathon;
@@ -31,26 +31,11 @@ const statusIndicators: Record<Hackathon['status'], { bg: string; label: string 
 
 export default function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
     const { user } = useAuth();
+    const { hackathons, addHackathon } = useUserHackathonsStore();
     const [registering, setRegistering] = useState(false);
-    const [registered, setRegistered] = useState(false);
-    const [checking, setChecking] = useState(false);
 
-    // Check if already registered on mount
-    useEffect(() => {
-        async function checkRegistration() {
-            if (!user?.id) return;
-            setChecking(true);
-            try {
-                const isRegistered = await isRegisteredForHackathon(user.id, hackathon.id);
-                setRegistered(isRegistered);
-            } catch (error) {
-                console.error('Error checking registration:', error);
-            } finally {
-                setChecking(false);
-            }
-        }
-        checkRegistration();
-    }, [user?.id, hackathon.id]);
+    // Check if already registered using store data (no API call needed)
+    const registered = hackathons.some(h => h.hackathon_id === hackathon.id);
 
     const handleRegister = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -60,7 +45,8 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
 
         setRegistering(true);
         try {
-            const result = await registerForHackathon(user.id, {
+            // Use Zustand store's addHackathon so dashboard updates automatically
+            const result = await addHackathon(user.id, {
                 hackathon_id: hackathon.id,
                 hackathon_name: hackathon.name,
                 hackathon_url: hackathon.url,
@@ -71,11 +57,10 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
                 status: 'planned',
             });
 
-            if (result.success) {
-                setRegistered(true);
+            if (result) {
                 onRegister?.(hackathon.id);
             } else {
-                console.error('Registration failed:', result.error);
+                console.error('Registration failed');
             }
         } catch (error) {
             console.error('Registration error:', error);
@@ -158,20 +143,20 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
                 {user ? (
                     <button
                         onClick={handleRegister}
-                        disabled={registering || registered || checking}
+                        disabled={registering || registered}
                         className={`flex-none flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm ${registered
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                : 'bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                            : 'bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900'
                             }`}
                     >
-                        {registering || checking ? (
+                        {registering ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
                         ) : registered ? (
                             <Check className="w-3 h-3" />
                         ) : (
                             <Plus className="w-3 h-3" />
                         )}
-                        <span>{checking ? '...' : registered ? 'Tracked' : 'Track'}</span>
+                        <span>{registered ? 'Tracked' : 'Track'}</span>
                     </button>
                 ) : (
                     <button
