@@ -79,11 +79,15 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 text-white">
-                                    <Zap className="size-4" />
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                                    <img 
+                                        src="/favicon.ico" 
+                                        alt="HackHub Logo" 
+                                        className="size-full object-cover"
+                                    />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-bold">HackHub</span>
+                                    <span className="font-bold">HackkyHub</span>
                                     <span className="text-xs text-muted-foreground">Hackathon Manager</span>
                                 </div>
                             </Link>
