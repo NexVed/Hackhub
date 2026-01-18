@@ -1,61 +1,77 @@
 'use client';
 
-import { useState } from 'react';
-import { FlagshipHackathon, getStatusColor, getStatusLabel } from '../../data/flagshipHackathons';
 import { ExternalLink, Plus, Check, Loader2 } from 'lucide-react';
 import BrandIcon from '../ui/BrandIcon';
 import { useAuth } from '../../contexts/AuthContext';
-import { useUserHackathonsStore } from '@/lib/stores';
+import { useUserHackathons, useRegisterForHackathon } from '@/hooks';
+import { getStatusColor, getStatusLabel } from './FlagshipSidebar';
+
+// Interface for hackathon data from backend API
+export interface FlagshipHackathonData {
+    id: string;
+    name: string;
+    organizer: string;
+    logoUrl?: string;
+    timeline: string;
+    status: 'live' | 'upcoming' | 'ended';
+    url: string;
+    description: string;
+    startDate?: string;
+    endDate?: string;
+}
 
 interface FlagshipCardProps {
-    hackathon: FlagshipHackathon;
+    hackathon: FlagshipHackathonData;
     onRegister?: () => void;
 }
 
 export default function FlagshipCard({ hackathon, onRegister }: FlagshipCardProps) {
     const { user } = useAuth();
-    const { hackathons, addHackathon } = useUserHackathonsStore();
-    const [registering, setRegistering] = useState(false);
 
-    // Check if already registered using store data (no API call needed)
-    const registered = hackathons.some(h => h.hackathon_id === hackathon.id);
+    // Use TanStack Query for user hackathons (auto-fetches & caches)
+    const { data: userHackathons = [] } = useUserHackathons(user?.id);
+
+    // Use TanStack Query mutation for registration (optimistic updates built-in)
+    const registerMutation = useRegisterForHackathon();
+
+    // Check if already registered using cached query data
+    const registered = userHackathons.some(h => h.hackathon_id === hackathon.id);
+
+    // Combines mutation pending state with optimistic registered check
+    const isRegistering = registerMutation.isPending &&
+        registerMutation.variables?.hackathon.hackathon_id === hackathon.id;
 
     const handleRegister = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!user?.id || registering || registered) {
-            console.log('Skipping registration:', { userId: user?.id, registering, registered });
+        if (!user?.id || registerMutation.isPending || registered) {
             return;
         }
 
-        console.log('Starting registration for:', hackathon.name);
-        setRegistering(true);
-        try {
-            // Use Zustand store's addHackathon so dashboard updates automatically
-            const result = await addHackathon(user.id, {
-                hackathon_id: hackathon.id,
-                hackathon_name: hackathon.name,
-                hackathon_url: hackathon.url,
-                platform: hackathon.organizer,
-                tags: [],
-                start_date: hackathon.startDate,
-                end_date: hackathon.endDate,
-                status: 'planned',
-            });
-
-            console.log('Registration result:', result);
-
-            if (result) {
-                onRegister?.();
-            } else {
-                console.error('Registration failed');
+        // Use TanStack Query mutation - optimistic update happens immediately
+        registerMutation.mutate(
+            {
+                userId: user.id,
+                hackathon: {
+                    hackathon_id: hackathon.id,
+                    hackathon_name: hackathon.name,
+                    hackathon_url: hackathon.url,
+                    platform: hackathon.organizer,
+                    tags: [],
+                    start_date: hackathon.startDate,
+                    end_date: hackathon.endDate,
+                    status: 'planned',
+                },
+            },
+            {
+                onSuccess: (result) => {
+                    if (result.success) {
+                        onRegister?.();
+                    }
+                },
             }
-        } catch (error) {
-            console.error('Registration error:', error);
-        } finally {
-            setRegistering(false);
-        }
+        );
     };
 
     return (
@@ -96,13 +112,13 @@ export default function FlagshipCard({ hackathon, onRegister }: FlagshipCardProp
                         {user && (
                             <button
                                 onClick={handleRegister}
-                                disabled={registering || registered}
+                                disabled={isRegistering || registered}
                                 className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${registered
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                     : 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50'
                                     }`}
                             >
-                                {registering ? (
+                                {isRegistering ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : registered ? (
                                     <Check className="w-3 h-3" />

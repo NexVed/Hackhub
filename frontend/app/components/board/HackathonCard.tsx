@@ -5,7 +5,7 @@ import { Hackathon } from '../../types/hackathon';
 import { getCountdown, getDaysUntilStart } from '../../data/mockHackathons';
 import { Plus, Check, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useUserHackathonsStore } from '@/lib/stores';
+import { useUserHackathons, useRegisterForHackathon } from '@/hooks';
 
 interface HackathonCardProps {
     hackathon: Hackathon;
@@ -31,42 +31,49 @@ const statusIndicators: Record<Hackathon['status'], { bg: string; label: string 
 
 export default function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
     const { user } = useAuth();
-    const { hackathons, addHackathon } = useUserHackathonsStore();
-    const [registering, setRegistering] = useState(false);
 
-    // Check if already registered using store data (no API call needed)
-    const registered = hackathons.some(h => h.hackathon_id === hackathon.id);
+    // Use TanStack Query for user hackathons (auto-fetches & caches)
+    const { data: userHackathons = [] } = useUserHackathons(user?.id);
+
+    // Use TanStack Query mutation for registration (optimistic updates built-in)
+    const registerMutation = useRegisterForHackathon();
+
+    // Check if already registered using cached query data
+    const registered = userHackathons.some(h => h.hackathon_id === hackathon.id);
+
+    // Combines mutation pending state with optimistic registered check
+    const isRegistering = registerMutation.isPending &&
+        registerMutation.variables?.hackathon.hackathon_id === hackathon.id;
 
     const handleRegister = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!user?.id || registering || registered) return;
+        if (!user?.id || registerMutation.isPending || registered) return;
 
-        setRegistering(true);
-        try {
-            // Use Zustand store's addHackathon so dashboard updates automatically
-            const result = await addHackathon(user.id, {
-                hackathon_id: hackathon.id,
-                hackathon_name: hackathon.name,
-                hackathon_url: hackathon.url,
-                platform: hackathon.platform,
-                tags: hackathon.tags || [],
-                start_date: hackathon.startDate,
-                end_date: hackathon.endDate,
-                status: 'planned',
-            });
-
-            if (result) {
-                onRegister?.(hackathon.id);
-            } else {
-                console.error('Registration failed');
+        // Use TanStack Query mutation - optimistic update happens immediately
+        registerMutation.mutate(
+            {
+                userId: user.id,
+                hackathon: {
+                    hackathon_id: hackathon.id,
+                    hackathon_name: hackathon.name,
+                    hackathon_url: hackathon.url,
+                    platform: hackathon.platform,
+                    tags: hackathon.tags || [],
+                    start_date: hackathon.startDate,
+                    end_date: hackathon.endDate,
+                    status: 'planned',
+                },
+            },
+            {
+                onSuccess: (result) => {
+                    if (result.success) {
+                        onRegister?.(hackathon.id);
+                    }
+                },
             }
-        } catch (error) {
-            console.error('Registration error:', error);
-        } finally {
-            setRegistering(false);
-        }
+        );
     };
 
     const handleClick = (e: React.MouseEvent) => {
@@ -129,9 +136,9 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
             {/* Footer: Tags & Action */}
             <div className="flex items-end justify-between gap-2 mt-auto">
                 <div className="flex flex-wrap gap-1 flex-1">
-                    {hackathon.tags.slice(0, 2).map((tag) => (
+                    {hackathon.tags.slice(0, 2).map((tag, index) => (
                         <span
-                            key={tag}
+                            key={`${tag}-${index}`}
                             className="text-[10px] px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded border border-zinc-200 dark:border-zinc-700"
                         >
                             {tag}
@@ -143,13 +150,13 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
                 {user ? (
                     <button
                         onClick={handleRegister}
-                        disabled={registering || registered}
+                        disabled={isRegistering || registered}
                         className={`flex-none flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm ${registered
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                             : 'bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900'
                             }`}
                     >
-                        {registering ? (
+                        {isRegistering ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
                         ) : registered ? (
                             <Check className="w-3 h-3" />

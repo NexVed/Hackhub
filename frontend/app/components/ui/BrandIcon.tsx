@@ -35,15 +35,21 @@ const brandIconMap: Record<string, React.ComponentType<{ className?: string }>> 
 
 // Local logos from public/hackathons folder
 const localLogoMap: Record<string, string> = {
-    // India Government
+    // India Government - matching database organizer names
+    'Ministry of Education + AICTE': '/hackathons/SIH.jpg',
     'Government of India': '/hackathons/SIH.jpg',
     'AICTE + MeitY': '/hackathons/AICTE.png',
     'NITI Aayog': '/hackathons/Atal_Innovation_Mission_logo.png',
+    'NITI Aayog (Atal Innovation Mission)': '/hackathons/Atal_Innovation_Mission_logo.png',
     'DRDO': '/hackathons/DRDO.jpg',
+    'DRDO (Defence R&D Organisation)': '/hackathons/DRDO.jpg',
 
-    // US Government
+    // US Government - matching database organizer names
+    'U.S. General Services Administration': '/hackathons/GSA.png',
     'U.S. GSA': '/hackathons/GSA.png',
+    'U.S. Department of Treasury': '/hackathons/U.S tresury fintech.png',
     'U.S. Dept of Treasury': '/hackathons/U.S tresury fintech.png',
+    'U.S. Department of Energy': '/hackathons/DOE.png',
     'U.S. Dept of Energy': '/hackathons/DOE.png',
 
     // MNC

@@ -49,13 +49,17 @@
 :root {
   --radius: 0.625rem;
   /* Light Mode - Professional Off-White/Grey */
-  --background: oklch(0.985 0.002 247.839); /* Slightly warm off-white */
-  --foreground: oklch(0.129 0.042 264.695); /* Deep slate text for readability */
-  --card: oklch(1 0 0); /* Pure white cards for contrast */
+  --background: oklch(0.985 0.002 247.839);
+  /* Slightly warm off-white */
+  --foreground: oklch(0.129 0.042 264.695);
+  /* Deep slate text for readability */
+  --card: oklch(1 0 0);
+  /* Pure white cards for contrast */
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.205 0 0); /* Black/Dark primary for professional feel */
+  --primary: oklch(0.205 0 0);
+  /* Black/Dark primary for professional feel */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -120,6 +124,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

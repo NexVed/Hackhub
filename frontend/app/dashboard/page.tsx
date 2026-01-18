@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
@@ -9,7 +9,7 @@ import ActivityHeatmap from '../components/dashboard/ActivityHeatmap';
 import WorkflowBoard from '../components/dashboard/WorkflowBoard';
 import { mockUser, UserHackathonWorkflow } from '../data/mockUserData';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserHackathonsStore, useActivitiesStore } from '@/lib/stores';
+import { useUserHackathons, useUpdateUserHackathon, useRemoveUserHackathon, useActivityHeatmap } from '@/hooks';
 import { UserHackathon } from '@/lib/userHackathonService';
 
 // Convert UserHackathon from DB to UserHackathonWorkflow for UI
@@ -31,44 +31,24 @@ function toWorkflowFormat(h: UserHackathon): UserHackathonWorkflow {
 export default function DashboardPage() {
     const { user, profile } = useAuth();
 
-    // Use Zustand stores for cached data
+    // Use TanStack Query for hackathons - auto-fetches, caches, and syncs with other pages
     const {
-        hackathons: rawHackathons,
-        loading: loadingHackathons,
-        fetchHackathons,
-        updateHackathon,
-        removeHackathon
-    } = useUserHackathonsStore();
+        data: rawHackathons = [],
+        isLoading: loadingHackathons
+    } = useUserHackathons(user?.id);
 
+    // Use TanStack Query for activities
     const {
-        activities,
-        loading: loadingActivities,
-        fetchActivities,
-        invalidate: invalidateActivities,
-        lastFetched: activitiesLastFetched
-    } = useActivitiesStore();
+        data: activities = [],
+        isLoading: loadingActivities
+    } = useActivityHeatmap(user?.id);
+
+    // Mutations with optimistic updates
+    const updateMutation = useUpdateUserHackathon();
+    const removeMutation = useRemoveUserHackathon();
 
     // Convert to workflow format for UI
     const hackathons = rawHackathons.map(toWorkflowFormat);
-
-    // Fetch data on mount (will use cache if available)
-    useEffect(() => {
-        if (user?.id) {
-            fetchHackathons(user.id);
-            fetchActivities(user.id);
-        } else {
-            // Fetch mock activities for non-logged in users
-            fetchActivities('');
-        }
-    }, [user?.id, fetchHackathons, fetchActivities]);
-
-    // Check if activities were invalidated and need refresh
-    // This runs when navigating back to dashboard after changes on other pages
-    useEffect(() => {
-        if (user?.id && activitiesLastFetched === null) {
-            fetchActivities(user.id, true);
-        }
-    }, [user?.id, activitiesLastFetched, fetchActivities]);
 
     const handleUpdateStatus = useCallback(async (id: string, newStatus: UserHackathonWorkflow['status']) => {
         const hackathon = rawHackathons.find(h => h.id === id);
@@ -87,24 +67,25 @@ export default function DashboardPage() {
             }
         }
 
-        // Update via store (handles optimistic update + API call)
-        await updateHackathon(id, {
-            status: newStatus,
-            progress: newProgress,
-            result: newResult
+        // Update via TanStack Query mutation (optimistic update built-in)
+        updateMutation.mutate({
+            hackathonId: id,
+            updates: {
+                status: newStatus,
+                progress: newProgress,
+                result: newResult
+            },
+            userId: user?.id
         });
-
-        // Invalidate activities to refresh after mutation
-        if (user?.id) {
-            invalidateActivities();
-            fetchActivities(user.id, true);
-        }
-    }, [rawHackathons, user?.id, updateHackathon, invalidateActivities, fetchActivities]);
+    }, [rawHackathons, user?.id, updateMutation]);
 
     // Handle remove hackathon
     const handleRemove = useCallback(async (id: string) => {
-        await removeHackathon(id);
-    }, [removeHackathon]);
+        removeMutation.mutate({
+            hackathonId: id,
+            userId: user?.id
+        });
+    }, [user?.id, removeMutation]);
 
     // Create user profile from auth data AND database profile
     const userProfile = user ? {

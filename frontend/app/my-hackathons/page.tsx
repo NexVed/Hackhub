@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
 import { Search, CheckCircle2, Clock, Target, Trophy, Medal, Award, Star, X, ExternalLink, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserHackathonsStore } from '@/lib/stores';
+import { useUserHackathons, useUpdateUserHackathon, useRemoveUserHackathon } from '@/hooks';
 import { UserHackathon } from '@/lib/userHackathonService';
 
 const statusConfig = {
@@ -24,26 +24,16 @@ const resultOptions = [
 export default function MyHackathonsPage() {
     const { user } = useAuth();
 
-    // Use Zustand store for cached data
-    const {
-        hackathons,
-        loading,
-        fetchHackathons,
-        updateHackathon,
-        removeHackathon
-    } = useUserHackathonsStore();
+    // Use TanStack Query for hackathons - auto-fetches, caches, and syncs
+    const { data: hackathons = [], isLoading: loading } = useUserHackathons(user?.id);
+
+    // Mutations with optimistic updates
+    const updateMutation = useUpdateUserHackathon();
+    const removeMutation = useRemoveUserHackathon();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [resultModal, setResultModal] = useState<{ hackathonId: string; hackathonName: string } | null>(null);
-    const [saving, setSaving] = useState(false);
-
-    // Fetch hackathons on mount (will use cache if available)
-    useEffect(() => {
-        if (user?.id) {
-            fetchHackathons(user.id);
-        }
-    }, [user?.id, fetchHackathons]);
 
     const handleUpdateStatus = useCallback(async (id: string, newStatus: 'planned' | 'active' | 'completed') => {
         // If moving to completed, show the result modal
@@ -55,32 +45,40 @@ export default function MyHackathonsPage() {
             }
         }
 
-        // Update via store (handles optimistic update + API call)
-        await updateHackathon(id, {
-            status: newStatus,
-            progress: newStatus === 'completed' ? 100 : (newStatus === 'active' ? 10 : 0)
+        // Update via TanStack Query mutation (optimistic update built-in)
+        updateMutation.mutate({
+            hackathonId: id,
+            updates: {
+                status: newStatus,
+                progress: newStatus === 'completed' ? 100 : (newStatus === 'active' ? 10 : 0)
+            },
+            userId: user?.id
         });
-    }, [hackathons, updateHackathon]);
+    }, [hackathons, updateMutation, user?.id]);
 
     const handleSetResult = useCallback(async (result: 'winner' | 'finalist' | 'participated') => {
         if (!resultModal) return;
 
-        setSaving(true);
-
-        // Update via store
-        await updateHackathon(resultModal.hackathonId, {
-            status: 'completed',
-            progress: 100,
-            result
+        // Update via TanStack Query mutation
+        updateMutation.mutate({
+            hackathonId: resultModal.hackathonId,
+            updates: {
+                status: 'completed',
+                progress: 100,
+                result
+            },
+            userId: user?.id
+        }, {
+            onSuccess: () => setResultModal(null)
         });
-
-        setSaving(false);
-        setResultModal(null);
-    }, [resultModal, updateHackathon]);
+    }, [resultModal, updateMutation, user?.id]);
 
     const handleRemove = useCallback(async (id: string) => {
-        await removeHackathon(id);
-    }, [removeHackathon]);
+        removeMutation.mutate({
+            hackathonId: id,
+            userId: user?.id
+        });
+    }, [removeMutation, user?.id]);
 
     const filteredHackathons = hackathons.filter((h) => {
         const matchesSearch = h.hackathon_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -356,7 +354,7 @@ export default function MyHackathonsPage() {
                                     <button
                                         key={option.value}
                                         onClick={() => handleSetResult(option.value as any)}
-                                        disabled={saving}
+                                        disabled={updateMutation.isPending}
                                         className="w-full flex items-center gap-3 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-violet-400 dark:hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20 transition-all"
                                     >
                                         <div className={`p-2 rounded-full ${option.color}`}>
@@ -365,6 +363,9 @@ export default function MyHackathonsPage() {
                                         <span className="font-medium text-zinc-900 dark:text-zinc-100">
                                             {option.label}
                                         </span>
+                                        {updateMutation.isPending && (
+                                            <Loader2 className="w-4 h-4 animate-spin ml-auto" />
+                                        )}
                                     </button>
                                 );
                             })}

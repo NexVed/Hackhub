@@ -1,0 +1,965 @@
+{
+    "name": "Hackathon Aggregator Pipeline",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hoursInterval": 6
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "Schedule Trigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                200,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "site:unstop.com hackathon (ongoing OR live OR happening now OR open registration OR registrations open) 2025 2026"
+                        },
+                        {
+                            "name": "num",
+                            "value": "20"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "unstop-scrape",
+            "name": "Scrape Unstop",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                100
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://www.hackerearth.com/challenges/hackathon/",
+                "options": {
+                    "timeout": 15000,
+                    "retry": {
+                        "maxTries": 3,
+                        "waitBetweenTries": 2000
+                    }
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        }
+                    ]
+                }
+            },
+            "id": "hackerearth-scrape",
+            "name": "Scrape HackerEarth",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                200
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "site:devnovate.com hackathon (ongoing OR live OR open registration) 2025 2026"
+                        },
+                        {
+                            "name": "num",
+                            "value": "20"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "devnovate-scrape",
+            "name": "Scrape Devnovate",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                300
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "site:devfolio.co hackathon (ongoing OR live OR happening now OR apply now OR register) 2025 2026"
+                        },
+                        {
+                            "name": "num",
+                            "value": "20"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "devfolio-scrape",
+            "name": "Scrape Devfolio",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                400
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "site:hack2skill.com hackathon (ongoing OR live OR open registration) 2025 2026"
+                        },
+                        {
+                            "name": "num",
+                            "value": "20"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "hack2skill-scrape",
+            "name": "Scrape Hack2Skill",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                500
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://devpost.com/api/hackathons?status=open&order_by=recently-added",
+                "options": {
+                    "timeout": 15000
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Accept",
+                            "value": "application/json"
+                        }
+                    ]
+                }
+            },
+            "id": "devpost-scrape",
+            "name": "Scrape Devpost",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                600
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "site:mlh.io hackathon (ongoing OR live OR happening now OR register) 2025 2026"
+                        },
+                        {
+                            "name": "num",
+                            "value": "20"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "mlh-scrape",
+            "name": "Scrape MLH",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                700
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "api_key",
+                            "value": "9a755b733f527f4729392585f876d9fc3463d8a40d3b748a55c0986d73259ef9"
+                        },
+                        {
+                            "name": "engine",
+                            "value": "google"
+                        },
+                        {
+                            "name": "q",
+                            "value": "hackathon (ongoing OR live OR happening now OR registration open) 2025 2026 apply india tech"
+                        },
+                        {
+                            "name": "num",
+                            "value": "30"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "other-search",
+            "name": "SerpAPI Search (Other)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                800
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Unstop SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Unstop results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('unstop.com') && (url.includes('hackathon') || url.includes('/o/'));\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  // Detect status from context\n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Unstop',\n      hackathon_name: r.title?.replace(/ \\| Unstop.*$/i, '').replace(/ - Unstop$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Unstop returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+            },
+            "id": "unstop-extract",
+            "name": "Extract Unstop",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const html = $input.item.json.body || $input.item.json.data || '';\nconst today = new Date().toISOString().split('T')[0];\n\nreturn [{\n  json: {\n    provider_platform_name: 'HackerEarth',\n    raw_content: html.substring(0, 15000),\n    source_url: 'https://www.hackerearth.com/challenges/hackathon/',\n    scraped_at: new Date().toISOString(),\n    today: today\n  }\n}];"
+            },
+            "id": "hackerearth-extract",
+            "name": "Extract HackerEarth",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Devnovate SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Devnovate results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('devnovate.com');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Devnovate',\n      hackathon_name: r.title?.replace(/ \\| Devnovate.*$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Devnovate returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+            },
+            "id": "devnovate-extract",
+            "name": "Extract Devnovate",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Devfolio SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Devfolio results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('devfolio.co');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress') || text.includes('submissions open')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Devfolio',\n      hackathon_name: r.title?.replace(/ \\| Devfolio.*$/i, '').replace(/ - Devfolio$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Devfolio returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+            },
+            "id": "devfolio-extract",
+            "name": "Extract Devfolio",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Hack2Skill SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Hack2Skill results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('hack2skill.com');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Hack2Skill',\n      hackathon_name: r.title?.replace(/ \\| Hack2Skill.*$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Hack2Skill returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+            },
+            "id": "hack2skill-extract",
+            "name": "Extract Hack2Skill",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconsole.log('Devpost API response keys:', Object.keys(data));\n\nlet hackathons = data.hackathons || data.data || data.results || [];\nif (!Array.isArray(hackathons)) hackathons = [];\n\nconsole.log('Devpost found ' + hackathons.length + ' hackathons');\n\nif (!hackathons.length) {\n  return [{ json: { skip: true, reason: 'No Devpost hackathons found' } }];\n}\n\nconst results = hackathons.slice(0, 50).map(h => ({\n  json: {\n    provider_platform_name: 'Devpost',\n    hackathon_name: h.title || h.name || 'Unknown',\n    start_date: h.submission_period_dates?.split(' - ')[0] || h.start_date || null,\n    end_date: h.submission_period_dates?.split(' - ')[1] || h.end_date || null,\n    status: h.open_state === 'open' || h.status === 'open' ? 'upcoming' : 'completed',\n    place_region: (h.location || '').toLowerCase().includes('online') ? 'online' : 'global',\n    location: h.location || h.displayed_location || 'Online',\n    description: (h.tagline || h.prize || h.description || '').substring(0, 500),\n    direct_link: h.url || h.hackathon_url || '',\n    source_scraped_at: new Date().toISOString()\n  }\n})).filter(r => r.json.hackathon_name !== 'Unknown' && r.json.direct_link);\n\nconsole.log('Devpost returning ' + results.length + ' valid hackathons');\nreturn results.length > 0 ? results : [{ json: { skip: true } }];"
+            },
+            "id": "devpost-extract",
+            "name": "Extract Devpost",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('MLH SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No MLH results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('mlh.io');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress') || text.includes('this weekend')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'MLH',\n      hackathon_name: r.title?.replace(/ \\| MLH.*$/i, '').replace(/ - MLH$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'global',\n      location: 'Various',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('MLH returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+            },
+            "id": "mlh-extract",
+            "name": "Extract MLH",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                700
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const results = $input.item.json.organic_results || [];\nconst outputs = [];\n\nconsole.log('SerpAPI Other found ' + results.length + ' results');\n\nfor (const result of results) {\n  const url = result.link || '';\n  const title = result.title || '';\n  const snippet = result.snippet || '';\n  \n  const text = (title + ' ' + snippet).toLowerCase();\n  \n  // Skip past/completed hackathons\n  if (text.includes('past') || text.includes('concluded') || text.includes('ended') || text.includes('completed')) {\n    continue;\n  }\n  \n  if (text.includes('hackathon')) {\n    // Detect status from context\n    let status = 'upcoming';\n    if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress') || text.includes('submissions open')) {\n      status = 'live';\n    }\n    \n    outputs.push({\n      json: {\n        provider_platform_name: 'Other',\n        hackathon_name: title.replace(/ - .*$/, '').trim().substring(0, 200) || 'Unknown',\n        start_date: null,\n        end_date: null,\n        status: status,\n        place_region: 'global',\n        location: 'Various',\n        description: snippet.substring(0, 500),\n        direct_link: url,\n        source_scraped_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nconsole.log('SerpAPI Other returning ' + outputs.length + ' hackathons');\nreturn outputs.length > 0 ? outputs : [{ json: { skip: true } }];"
+            },
+            "id": "other-extract",
+            "name": "Extract Other Results",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                700,
+                800
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "passThrough"
+            },
+            "id": "merge-all-sources",
+            "name": "Merge All Sources",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2.1,
+            "position": [
+                960,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst filtered = items.filter(item => !item.json.skip && item.json.raw_content && item.json.raw_content.length > 100);\nconsole.log(`Filtered ${items.length} items down to ${filtered.length} valid items`);\nreturn filtered;"
+            },
+            "id": "filter-empty",
+            "name": "Filter Empty Results",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1180,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "batchSize": 1,
+                "options": {}
+            },
+            "id": "split-for-ai",
+            "name": "Split for AI Processing",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                1400,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const item = $input.item.json;\nconst provider = item.provider_platform_name;\nconst content = item.raw_content || '';\nconst today = item.today;\n\nconst prompt = `You are a hackathon data extraction expert. Extract ALL hackathon information from this content.\n\nProvider Platform: ${provider}\nToday's Date: ${today}\n\nContent to analyze:\n${content}\n\nExtract each hackathon with these EXACT fields in a JSON array:\n{\n  \"provider_platform_name\": \"${provider}\",\n  \"hackathon_name\": \"full hackathon title\",\n  \"start_date\": \"YYYY-MM-DD or null if unknown\",\n  \"end_date\": \"YYYY-MM-DD or null if unknown\",\n  \"status\": \"live\" or \"upcoming\" or \"completed\" (infer based on dates vs today: ${today}),\n  \"place_region\": \"online\" or \"india\" or \"global\" or \"city/state name\",\n  \"location\": \"full location string (city, country) or 'Online'\",\n  \"description\": \"cleaned summary (max 120 words, remove ads/irrelevant content)\",\n  \"direct_link\": \"actual hackathon registration/detail page URL\"\n}\n\nCRITICAL RULES:\n1. Infer status: If start_date > today = \"upcoming\", if start_date <= today <= end_date = \"live\", else = \"completed\"\n2. Infer place_region: \"online\" for virtual events, \"india\" for Indian cities, \"global\" for international\n3. Clean description: Remove HTML, ads, irrelevant content. Max 120 words.\n4. If dates are relative (e.g., \"starts in 5 days\"), convert to actual dates\n5. Return ONLY a valid JSON array, no markdown, no explanation\n6. Include ALL hackathons found, not just the first one\n\nReturn format:\n[\n  {\n    \"provider_platform_name\": \"${provider}\",\n    \"hackathon_name\": \"AI Innovation Challenge 2026\",\n    \"start_date\": \"2026-02-15\",\n    \"end_date\": \"2026-02-17\",\n    \"status\": \"upcoming\",\n    \"place_region\": \"india\",\n    \"location\": \"Bangalore, India\",\n    \"description\": \"Build innovative AI solutions for healthcare and sustainability...\",\n    \"direct_link\": \"https://example.com/ai-challenge\"\n  }\n]`;\n\nreturn {\n  json: {\n    prompt: prompt,\n    provider_platform_name: provider,\n    scraped_at: item.scraped_at\n  }\n};"
+            },
+            "id": "prepare-mistral-prompt",
+            "name": "Prepare Mistral Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1620,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.mistral.ai/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer hPqH9TJ1f3djNClBaKaXjKZR6Q0SY1Am"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"mistral-small-latest\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a precise data extraction assistant. Extract structured hackathon data and return ONLY valid JSON arrays. Never include markdown formatting, code blocks, or explanations. Return raw JSON only.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($json.prompt) }}\n    }\n  ],\n  \"temperature\": 0.1,\n  \"max_tokens\": 4000,\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "mistral-ai",
+            "name": "Mistral AI Processing",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1840,
+                400
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst allHackathons = [];\n\nfor (const item of items) {\n  try {\n    let response = item.json.choices?.[0]?.message?.content || item.json.response || '';\n    \n    // Clean response - remove markdown code blocks\n    response = response.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    \n    // Try to find JSON array or object\n    let hackathons;\n    try {\n      const parsed = JSON.parse(response);\n      // Handle both array and object with hackathons key\n      hackathons = Array.isArray(parsed) ? parsed : (parsed.hackathons || [parsed]);\n    } catch (parseError) {\n      // Try to extract JSON array from response\n      const jsonMatch = response.match(/\\[[\\s\\S]*\\]/);\n      if (jsonMatch) {\n        hackathons = JSON.parse(jsonMatch[0]);\n      } else {\n        console.error('Failed to parse response:', response.substring(0, 500));\n        continue;\n      }\n    }\n    \n    if (!Array.isArray(hackathons)) {\n      hackathons = [hackathons];\n    }\n    \n    const today = new Date();\n    \n    for (const h of hackathons) {\n      if (!h.hackathon_name || !h.direct_link) {\n        continue;\n      }\n      \n      // Validate and normalize status\n      let status = (h.status || 'upcoming').toLowerCase();\n      if (!['live', 'upcoming', 'completed'].includes(status)) {\n        status = 'upcoming';\n      }\n      \n      // Infer status from dates if possible\n      if (h.start_date && h.end_date) {\n        const startDate = new Date(h.start_date);\n        const endDate = new Date(h.end_date);\n        if (today < startDate) {\n          status = 'upcoming';\n        } else if (today >= startDate && today <= endDate) {\n          status = 'live';\n        } else {\n          status = 'completed';\n        }\n      }\n      \n      // Normalize place_region\n      let placeRegion = (h.place_region || 'global').toLowerCase();\n      const validRegions = ['online', 'india', 'global'];\n      if (!validRegions.includes(placeRegion) && !placeRegion.match(/^[a-z ]+$/)) {\n        placeRegion = 'global';\n      }\n      \n      allHackathons.push({\n        provider_platform_name: h.provider_platform_name || item.json.provider_platform_name || 'Other',\n        hackathon_name: h.hackathon_name.trim().substring(0, 255),\n        start_date: h.start_date || null,\n        end_date: h.end_date || null,\n        status: status,\n        place_region: placeRegion,\n        location: h.location?.trim() || null,\n        description: h.description?.trim().substring(0, 1000) || null,\n        direct_link: h.direct_link.trim(),\n        source_scraped_at: new Date().toISOString()\n      });\n    }\n  } catch (error) {\n    console.error('Error processing item:', error.message);\n  }\n}\n\nconsole.log(`Extracted ${allHackathons.length} hackathons from AI responses`);\n\nreturn allHackathons.map(h => ({ json: h }));"
+            },
+            "id": "parse-ai-response",
+            "name": "Parse AI Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2060,
+                400
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "loop-back-ai",
+            "name": "Loop Back to AI",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                2060,
+                560
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst seen = new Map();\n\nconsole.log(`Deduplicate received ${items.length} items`);\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Skip items marked as skip or without required fields\n  if (data.skip === true) {\n    console.log('Skipping item marked as skip');\n    continue;\n  }\n  \n  if (!data.hackathon_name || !data.direct_link) {\n    console.log('Skipping item without name or link:', JSON.stringify(data).substring(0, 200));\n    continue;\n  }\n  \n  // Normalize URL for deduplication\n  let normalizedUrl = data.direct_link.toLowerCase().trim();\n  normalizedUrl = normalizedUrl.replace(/\\/$/, '');\n  normalizedUrl = normalizedUrl.replace(/^https?:\\/\\/(www\\.)?/, '');\n  \n  const nameKey = data.hackathon_name.toLowerCase().trim().substring(0, 100);\n  const key = `${nameKey}_${normalizedUrl}`;\n  \n  if (seen.has(key)) {\n    const existing = seen.get(key);\n    const merged = {\n      ...existing,\n      description: data.description || existing.description,\n      start_date: data.start_date || existing.start_date,\n      end_date: data.end_date || existing.end_date,\n      location: data.location || existing.location,\n      place_region: data.place_region || existing.place_region\n    };\n    seen.set(key, merged);\n  } else {\n    seen.set(key, {\n      provider_platform_name: data.provider_platform_name || 'Unknown',\n      hackathon_name: String(data.hackathon_name).trim().substring(0, 255),\n      start_date: data.start_date || null,\n      end_date: data.end_date || null,\n      status: data.status || 'upcoming',\n      place_region: data.place_region || 'global',\n      location: data.location || null,\n      description: data.description ? String(data.description).substring(0, 1000) : null,\n      direct_link: String(data.direct_link).trim(),\n      source_scraped_at: data.source_scraped_at || new Date().toISOString()\n    });\n  }\n}\n\nconst unique = Array.from(seen.values());\nconsole.log(`Deduplicated to ${unique.length} unique hackathons`);\n\nif (unique.length === 0) {\n  console.log('WARNING: No valid hackathons found!');\n  return [];\n}\n\nreturn unique.map(h => ({ json: h }));"
+            },
+            "id": "deduplicate",
+            "name": "Deduplicate & Validate",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2280,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "batchSize": 10,
+                "options": {}
+            },
+            "id": "split-for-supabase",
+            "name": "Split for Supabase",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                2500,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://nqnpeaxtbyeeumvkdklh.supabase.co/rest/v1/scraped_hackathons",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xbnBlYXh0YnllZXVtdmtka2xoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTExNzMsImV4cCI6MjA4NDA2NzE3M30.U2b6VDPD2Jt9lUv6zOs0yGfXGEF4WJeDIGDKVHBsHZ4"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xbnBlYXh0YnllZXVtdmtka2xoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTExNzMsImV4cCI6MjA4NDA2NzE3M30.U2b6VDPD2Jt9lUv6zOs0yGfXGEF4WJeDIGDKVHBsHZ4"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "resolution=merge-duplicates,return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"provider_platform_name\": {{ JSON.stringify($json.provider_platform_name) }},\n  \"hackathon_name\": {{ JSON.stringify($json.hackathon_name) }},\n  \"start_date\": {{ $json.start_date ? JSON.stringify($json.start_date) : 'null' }},\n  \"end_date\": {{ $json.end_date ? JSON.stringify($json.end_date) : 'null' }},\n  \"status\": {{ JSON.stringify($json.status) }},\n  \"place_region\": {{ JSON.stringify($json.place_region) }},\n  \"location\": {{ $json.location ? JSON.stringify($json.location) : 'null' }},\n  \"description\": {{ $json.description ? JSON.stringify($json.description) : 'null' }},\n  \"direct_link\": {{ JSON.stringify($json.direct_link) }},\n  \"source_scraped_at\": {{ JSON.stringify($json.source_scraped_at) }}\n}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "supabase-upsert",
+            "name": "Supabase Upsert",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                2720,
+                400
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {},
+            "id": "loop-back-supabase",
+            "name": "Loop Back Supabase",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                2720,
+                560
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nlet successCount = 0;\nlet errorCount = 0;\nconst errors = [];\n\nfor (const item of items) {\n  const statusCode = item.json.statusCode || item.json.status;\n  if (statusCode === 201 || statusCode === 200 || statusCode === 204) {\n    successCount++;\n  } else {\n    errorCount++;\n    errors.push({\n      statusCode: statusCode,\n      message: item.json.message || item.json.error || 'Unknown error'\n    });\n  }\n}\n\nconst summary = {\n  total_processed: items.length,\n  successful_upserts: successCount,\n  failed_upserts: errorCount,\n  errors: errors.slice(0, 5), // Keep only first 5 errors\n  timestamp: new Date().toISOString(),\n  message: `Hackathon scraping completed. ${successCount} hackathons added/updated, ${errorCount} failures.`\n};\n\nconsole.log('Workflow Summary:', JSON.stringify(summary, null, 2));\n\nreturn [{ json: summary }];"
+            },
+            "id": "final-summary",
+            "name": "Final Summary",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2940,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{$json.skip}}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "filter-skip",
+            "name": "Filter Skip Items",
+            "type": "n8n-nodes-base.filter",
+            "typeVersion": 2,
+            "position": [
+                2280,
+                560
+            ]
+        }
+    ],
+    "connections": {
+        "Schedule Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Scrape Unstop",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape HackerEarth",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape Devnovate",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape Devfolio",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape Hack2Skill",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape Devpost",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Scrape MLH",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Brave Search (Other)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape Unstop": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Unstop",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape HackerEarth": {
+            "main": [
+                [
+                    {
+                        "node": "Extract HackerEarth",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape Devnovate": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Devnovate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape Devfolio": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Devfolio",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape Hack2Skill": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Hack2Skill",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape Devpost": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Devpost",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Scrape MLH": {
+            "main": [
+                [
+                    {
+                        "node": "Extract MLH",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "SerpAPI Search (Other)": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Other Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Unstop": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract HackerEarth": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Empty Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Devnovate": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Devfolio": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Hack2Skill": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Devpost": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract MLH": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Other Results": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter Empty Results": {
+            "main": [
+                [
+                    {
+                        "node": "Split for AI Processing",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split for AI Processing": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Mistral Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Mistral Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Mistral AI Processing",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mistral AI Processing": {
+            "main": [
+                [
+                    {
+                        "node": "Parse AI Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse AI Response": {
+            "main": [
+                [
+                    {
+                        "node": "Deduplicate & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Deduplicate & Validate": {
+            "main": [
+                [
+                    {
+                        "node": "Split for Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split for Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Upsert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase Upsert": {
+            "main": [
+                [
+                    {
+                        "node": "Final Summary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "settings": {
+        "executionOrder": "v1",
+        "saveManualExecutions": true,
+        "callerPolicy": "workflowsFromSameOwner",
+        "errorWorkflow": ""
+    },
+    "staticData": null,
+    "tags": [
+        "hackathon",
+        "scraper",
+        "automation"
+    ],
+    "triggerCount": 1,
+    "updatedAt": "2026-01-18T21:21:00.000Z",
+    "versionId": "1.0.0"
+}
