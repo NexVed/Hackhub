@@ -17,7 +17,7 @@ const pageTitles: Record<string, string> = {
 
 export function TopBar({ children }: TopBarProps) {
     const pathname = usePathname();
-    const title = pageTitles[pathname] || 'HackHub';
+    const title = pageTitles[pathname] || 'HackkyHub';
 
     return (
         <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-sidebar-border bg-background px-4">
