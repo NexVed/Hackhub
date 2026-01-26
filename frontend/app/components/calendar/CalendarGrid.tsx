@@ -18,20 +18,10 @@ export default function CalendarGrid() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    // Navigate months
-    const goToPreviousMonth = () => {
-        setCurrentDate(new Date(year, month - 1, 1));
-    };
+    const goToPreviousMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+    const goToNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+    const goToToday = () => setCurrentDate(new Date());
 
-    const goToNextMonth = () => {
-        setCurrentDate(new Date(year, month + 1, 1));
-    };
-
-    const goToToday = () => {
-        setCurrentDate(new Date());
-    };
-
-    // Calculate calendar days
     const calendarDays = useMemo(() => {
         const firstDayOfMonth = new Date(year, month, 1);
         const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -40,7 +30,7 @@ export default function CalendarGrid() {
 
         const days: Date[] = [];
 
-        // Previous month days to fill first week
+        // Previous month days
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = firstDayOfWeek - 1; i >= 0; i--) {
             days.push(new Date(year, month - 1, prevMonthLastDay - i));
@@ -51,7 +41,7 @@ export default function CalendarGrid() {
             days.push(new Date(year, month, i));
         }
 
-        // Next month days to complete 6 weeks (42 days)
+        // Next month days (fill up to 42)
         const remainingDays = 42 - days.length;
         for (let i = 1; i <= remainingDays; i++) {
             days.push(new Date(year, month + 1, i));
@@ -60,30 +50,24 @@ export default function CalendarGrid() {
         return days;
     }, [year, month]);
 
-    // Combine all hackathons
     const allEvents = useMemo(() => {
         const regularEvents: (Hackathon | FlagshipHackathon)[] = [...mockHackathons];
         const flagshipEvents: (Hackathon | FlagshipHackathon)[] = flagshipHackathons.filter(h => h.startDate);
         return [...regularEvents, ...flagshipEvents];
     }, []);
 
-    // Get events for a specific day
     const getEventsForDay = (date: Date): CalendarEvent[] => {
-        const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-
+        const dateStr = date.toLocaleDateString('en-CA');
         return allEvents
             .filter((event) => {
                 const startDate = 'startDate' in event ? event.startDate : undefined;
                 const endDate = 'endDate' in event ? event.endDate : startDate;
-
                 if (!startDate) return false;
-
                 return dateStr >= startDate && dateStr <= (endDate || startDate);
             })
             .map((event) => {
                 const startDate = 'startDate' in event ? event.startDate : undefined;
                 const endDate = 'endDate' in event ? event.endDate : startDate;
-
                 return {
                     event,
                     isStart: dateStr === startDate,
@@ -98,11 +82,6 @@ export default function CalendarGrid() {
         setIsModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedHackathon(null);
-    };
-
     const today = new Date();
     const isToday = (date: Date) =>
         date.getDate() === today.getDate() &&
@@ -111,59 +90,42 @@ export default function CalendarGrid() {
 
     const isCurrentMonth = (date: Date) => date.getMonth() === month;
 
-    const monthLabel = currentDate.toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric'
-    });
+    const monthLabel = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-full bg-[#0a0a0c] text-zinc-200 rounded-xl overflow-hidden border border-zinc-800/50 shadow-2xl shadow-black/50">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 bg-[#0a0a0c] border-b border-zinc-800/50">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                        {monthLabel}
-                    </h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-white">{monthLabel}</h2>
                     <button
                         onClick={goToToday}
-                        className="px-3 py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                        className="px-3 py-1 text-xs font-medium text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-md transition-all"
                     >
                         Today
                     </button>
                 </div>
-
                 <div className="flex items-center gap-1">
-                    <button
-                        onClick={goToPreviousMonth}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        aria-label="Previous month"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                    <button onClick={goToPreviousMonth} className="p-2 hover:bg-zinc-900 rounded-lg text-zinc-500 hover:text-zinc-200 transition-colors">
+                        <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <button
-                        onClick={goToNextMonth}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        aria-label="Next month"
-                    >
-                        <ChevronRight className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                    <button onClick={goToNextMonth} className="p-2 hover:bg-zinc-900 rounded-lg text-zinc-500 hover:text-zinc-200 transition-colors">
+                        <ChevronRight className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
-            {/* Weekday headers */}
-            <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                {WEEKDAYS.map((day) => (
-                    <div
-                        key={day}
-                        className="py-3 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
-                    >
+            {/* Weekdays */}
+            <div className="grid grid-cols-7 border-b border-zinc-800/50 bg-[#0a0a0c]">
+                {WEEKDAYS.map(day => (
+                    <div key={day} className="py-3 text-center text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
                         {day}
                     </div>
                 ))}
             </div>
 
-            {/* Calendar Grid */}
-            <div className="flex-1 grid grid-cols-7 grid-rows-6 overflow-hidden">
+            {/* Grid */}
+            <div className="flex-1 grid grid-cols-7 grid-rows-6 bg-zinc-900/20">
                 {calendarDays.map((date, index) => (
                     <CalendarDayCell
                         key={index}
@@ -176,11 +138,11 @@ export default function CalendarGrid() {
                 ))}
             </div>
 
-            {/* Detail Modal */}
+            {/* Modal */}
             <HackathonDetailModal
                 hackathon={selectedHackathon}
                 isOpen={isModalOpen}
-                onClose={closeModal}
+                onClose={() => setIsModalOpen(false)}
             />
         </div>
     );
