@@ -29,7 +29,7 @@ export function TopBar({ children }: TopBarProps) {
 
             {/* Page title */}
             <div className="flex-1">
-                <h1 className="font-semibold text-lg">{title}</h1>
+                <h1 className="font-semibold text-sm sm:text-lg truncate">{title}</h1>
             </div>
 
             {/* Right side actions */}

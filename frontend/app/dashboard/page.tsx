@@ -107,10 +107,10 @@ export default function DashboardPage() {
                     <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dashboard</span>
                 </TopBar>
 
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 p-6 overflow-auto">
-                    <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 p-3 sm:p-4 md:p-6 overflow-auto">
+                    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
                         {/* Top Section: Profile & Activity */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                             {/* User Profile - Left */}
                             <div className="lg:col-span-1">
                                 <UserProfile user={userProfile} />

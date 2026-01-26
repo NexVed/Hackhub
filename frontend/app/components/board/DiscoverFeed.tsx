@@ -138,20 +138,20 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
     }
 
     return (
-        <div className="flex flex-col gap-8 p-6 max-w-7xl mx-auto">
+        <div className="flex flex-col gap-6 sm:gap-8 px-2 sm:px-6 py-4 sm:py-8 w-full max-w-[1600px] mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-0.5 sm:space-y-1">
+                    <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         Discover Hackathons
                     </h1>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
                         {totalCount}+ hackathons available across platforms
                     </p>
                 </div>
                 <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                    className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors self-start sm:self-auto"
                 >
                     <RefreshCw className={`w-4 h-4 ${isFetchingNextPage ? 'animate-spin' : ''}`} />
                     Refresh

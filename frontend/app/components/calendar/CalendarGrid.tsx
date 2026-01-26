@@ -80,45 +80,45 @@ export default function CalendarGrid() {
         date.getFullYear() === today.getFullYear();
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0c] text-zinc-200 rounded-xl overflow-hidden border border-zinc-800/50 shadow-2xl shadow-black/50">
+        <div className="flex flex-col h-full bg-white dark:bg-[#0a0a0c] text-zinc-800 dark:text-zinc-200 rounded-lg sm:rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800/50 shadow-lg dark:shadow-2xl shadow-zinc-300/50 dark:shadow-black/50">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-[#0a0a0c] border-b border-zinc-800/50 z-10 relative shadow-sm">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-semibold tracking-tight text-white">{year} Calendar</h2>
-                    <span className="text-xs font-medium text-zinc-500 px-2 py-1 bg-zinc-900 rounded-md border border-zinc-800">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-5 bg-white dark:bg-[#0a0a0c] border-b border-zinc-200 dark:border-zinc-800/50 z-10 relative shadow-sm">
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <h2 className="text-lg sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">{year} Calendar</h2>
+                    <span className="text-[10px] sm:text-xs font-medium text-zinc-600 dark:text-zinc-500 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-zinc-100 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 hidden xs:inline-block">
                         Year View
                     </span>
                 </div>
             </div>
 
             {/* Scrollable Container */}
-            <div className="flex-1 overflow-y-auto bg-zinc-900/20 scroll-smooth">
-                <div className="flex flex-col gap-12 p-6">
+            <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/20 scroll-smooth">
+                <div className="flex flex-col gap-6 sm:gap-12 p-3 sm:p-6">
                     {MONTHS.map((monthName, monthIndex) => {
                         const days = generateDaysForMonth(monthIndex);
 
                         return (
                             <div key={monthName} className="flex flex-col gap-4">
-                                {/* Month Sticky Header? Optional, let's keep it simple inline first */}
-                                <h3 className="text-xl font-semibold text-zinc-100 pl-1 sticky top-0 bg-[#0a0a0c]/90 backdrop-blur-sm py-2 z-10 w-full border-b border-zinc-800/50">
+                                {/* Month Sticky Header */}
+                                <h3 className="text-base sm:text-xl font-semibold text-zinc-800 dark:text-zinc-100 pl-1 sticky top-0 bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-sm py-1.5 sm:py-2 z-10 w-full border-b border-zinc-200 dark:border-zinc-800/50">
                                     {monthName}
                                 </h3>
 
-                                {/* Weekday Headers (Repeated for clarity or just once at top? Repeated is better for long scroll) */}
-                                <div className="grid grid-cols-7 mb-2">
+                                {/* Weekday Headers */}
+                                <div className="grid grid-cols-7 mb-1 sm:mb-2">
                                     {WEEKDAYS.map(day => (
-                                        <div key={day} className="text-center text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
-                                            {day}
+                                        <div key={day} className="text-center text-[8px] sm:text-[10px] font-medium text-zinc-500 dark:text-zinc-500 uppercase tracking-wider sm:tracking-widest">
+                                            <span className="hidden sm:inline">{day}</span>
+                                            <span className="sm:hidden">{day.charAt(0)}</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Month Grid */}
-                                <div className="grid grid-cols-7 auto-rows-fr gap-px bg-zinc-800/30 border border-zinc-800/50 rounded-lg overflow-hidden">
-                                    {/* Make sure we render exactly cells for the month grid */}
+                                <div className="grid grid-cols-7 auto-rows-fr gap-px bg-zinc-200 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800/50 rounded-md sm:rounded-lg overflow-hidden">
                                     {days.map((date, index) => {
                                         if (!date) {
-                                            return <div key={`empty-${index}`} className="bg-[#0a0a0c]/50 min-h-[100px]" />;
+                                            return <div key={`empty-${index}`} className="bg-zinc-100 dark:bg-[#0a0a0c]/50 min-h-[60px] sm:min-h-[100px]" />;
                                         }
                                         return (
                                             <CalendarDayCell
