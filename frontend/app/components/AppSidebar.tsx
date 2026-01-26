@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Globe, Settings, Calendar, Trophy, Users, FolderKanban, ChevronDown, Zap, LogOut, User } from 'lucide-react';
+import { Home, Globe, Settings, Calendar, Trophy, Users, FolderKanban, ChevronDown, Zap, LogOut, User, Bug } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { BugReportDialog } from '@/components/BugReportDialog';
 
 import {
     Sidebar,
@@ -54,11 +56,17 @@ let exploreItems = [
         href: '/mnc-hackathons',
         icon: Trophy,
     },
+    {
+        title: 'Community',
+        href: '/community',
+        icon: Users,
+    },
 ];
 
 export function AppSidebar() {
     const pathname = usePathname();
     const { user, signOut } = useAuth();
+    const [isBugDialogOpen, setIsBugDialogOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -152,6 +160,13 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Report a Bug" onClick={() => setIsBugDialogOpen(true)}>
+                            <Bug className="text-rose-500" />
+                            <span>Report a Bug</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Settings" asChild>
                             <Link href="/settings">
                                 <Settings />
@@ -199,6 +214,7 @@ export function AppSidebar() {
             </SidebarFooter>
 
             <SidebarRail />
+            <BugReportDialog open={isBugDialogOpen} onOpenChange={setIsBugDialogOpen} />
         </Sidebar>
     );
 }

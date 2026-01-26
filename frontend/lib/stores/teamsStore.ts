@@ -17,12 +17,15 @@ interface TeamsState {
     publicTeams: TeamWithMembers[];
     requestedTeamIds: Set<string>;
     loading: boolean;
+    publicTeamsLoading: boolean;
     initialized: boolean;
+    publicTeamsLoaded: boolean;
     lastFetched: number | null;
     userId: string | null;
 
     // Actions
     fetchTeams: (userId: string, force?: boolean) => Promise<void>;
+    fetchPublicTeams: (userId: string, force?: boolean) => Promise<void>;
     createTeam: (userId: string, data: CreateTeamData) => Promise<Team | null>;
     joinByCode: (userId: string, code: string) => Promise<{ success: boolean; team?: Team; error?: string }>;
     requestToJoin: (userId: string, teamId: string) => Promise<boolean>;
@@ -37,10 +40,13 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     publicTeams: [],
     requestedTeamIds: new Set(),
     loading: false,
+    publicTeamsLoading: false,
     initialized: false,
+    publicTeamsLoaded: false,
     lastFetched: null,
     userId: null,
 
+    // Main fetch only gets user's teams initially for speed
     fetchTeams: async (userId: string, force = false) => {
         const state = get();
 
@@ -57,29 +63,61 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
 
         // If different user, reset state
         if (state.userId !== userId) {
-            set({ myTeams: [], publicTeams: [], requestedTeamIds: new Set(), initialized: false });
+            set({
+                myTeams: [],
+                publicTeams: [],
+                requestedTeamIds: new Set(),
+                initialized: false,
+                publicTeamsLoaded: false
+            });
         }
 
         set({ loading: true, userId });
 
         try {
-            const [myTeams, publicTeams, requestedIds] = await Promise.all([
+            // ONLY fetch user's teams and requests initially
+            const [myTeams, requestedIds] = await Promise.all([
                 getMyTeams(userId),
-                getPublicTeams(userId),
                 getPendingRequestsForUser(userId)
             ]);
 
             set({
                 myTeams,
-                publicTeams,
                 requestedTeamIds: requestedIds,
                 loading: false,
                 initialized: true,
                 lastFetched: Date.now()
             });
+
+            // We do NOT fetch public teams here automatically anymore
+            // They will be fetched when the user clicks the "Discover" tab
         } catch (error) {
             console.error('Error fetching teams:', error);
             set({ loading: false });
+        }
+    },
+
+    fetchPublicTeams: async (userId: string, force = false) => {
+        const state = get();
+        if (!userId) return;
+
+        // Skip if already loaded and fresh enough (unless forced)
+        if (!force && state.publicTeamsLoaded && state.publicTeams.length > 0) {
+            return;
+        }
+
+        set({ publicTeamsLoading: true });
+
+        try {
+            const publicTeams = await getPublicTeams(userId);
+            set({
+                publicTeams,
+                publicTeamsLoading: false,
+                publicTeamsLoaded: true
+            });
+        } catch (error) {
+            console.error('Error fetching public teams:', error);
+            set({ publicTeamsLoading: false });
         }
     },
 

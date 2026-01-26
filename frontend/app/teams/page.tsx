@@ -26,7 +26,9 @@ export default function TeamsPage() {
         publicTeams,
         requestedTeamIds,
         loading,
+        publicTeamsLoading,
         fetchTeams,
+        fetchPublicTeams,
         createTeam,
         joinByCode,
         requestToJoin
@@ -50,12 +52,19 @@ export default function TeamsPage() {
     // Copied code
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-    // Fetch teams on mount (will use cache if available)
+    // Fetch user teams on mount
     useEffect(() => {
         if (user?.id) {
             fetchTeams(user.id);
         }
     }, [user?.id, fetchTeams]);
+
+    // Lazy load public teams when tab is switched
+    useEffect(() => {
+        if (activeTab === 'discover' && user?.id) {
+            fetchPublicTeams(user.id);
+        }
+    }, [activeTab, user?.id, fetchPublicTeams]);
 
     const handleCreateTeam = async () => {
         if (!user?.id || !createForm.name.trim()) return;
@@ -183,7 +192,7 @@ export default function TeamsPage() {
                                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                                     }`}
                             >
-                                Discover ({publicTeams.length})
+                                Discover {publicTeamsLoading && <Loader2 className="inline w-3 h-3 ml-1 animate-spin" />}
                             </button>
                         </div>
 

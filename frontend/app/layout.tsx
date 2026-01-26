@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HackHub - Hackathon Management Board",
+  title: "HackkyHub - Hackathon Management Board",
   description: "Discover and manage hackathons in a unified workspace",
 };
 

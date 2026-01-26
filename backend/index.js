@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import activityRoutes from './routes/activities.js';
 import hackathonRoutes from './routes/hackathons.js';
+import communityRoutes from './routes/community.js';
+import bugRoutes from './routes/bugs.js';
 import { initSocket } from './services/socketService.js';
 
 dotenv.config();
@@ -77,7 +79,9 @@ app.get('/', (req, res) => {
         endpoints: {
             auth: '/api/auth',
             activities: '/api/activities',
-            hackathons: '/api/hackathons'
+            hackathons: '/api/hackathons',
+            community: '/api/community',
+            bugs: '/api/bugs'
         }
     });
 });
@@ -90,6 +94,12 @@ app.use('/api/activities', activityRoutes);
 
 // Hackathon Routes
 app.use('/api/hackathons', hackathonRoutes);
+
+// Community Routes
+app.use('/api/community', communityRoutes);
+
+// Bug Report Routes
+app.use('/api/bugs', bugRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

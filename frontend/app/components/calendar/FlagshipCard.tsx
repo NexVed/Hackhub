@@ -118,10 +118,10 @@ export default function FlagshipCard({ hackathon, onRegister }: FlagshipCardProp
                                     : 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50'
                                     }`}
                             >
-                                {isRegistering ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : registered ? (
+                                {registered ? (
                                     <Check className="w-3 h-3" />
+                                ) : isRegistering ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
                                     <Plus className="w-3 h-3" />
                                 )}

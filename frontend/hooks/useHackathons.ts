@@ -48,8 +48,79 @@ export function useRegisterForHackathon() {
     return useMutation({
         mutationFn: ({ userId, hackathon }: { userId: string; hackathon: any }) =>
             registerForHackathon(userId, hackathon),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: hackathonKeys.user(variables.userId) });
+        onMutate: async ({ userId, hackathon }) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: hackathonKeys.user(userId) });
+
+            // Snapshot the previous value
+            const previousHackathons = queryClient.getQueryData<UserHackathon[]>(hackathonKeys.user(userId));
+            const previousActivities = queryClient.getQueryData<any[]>(activityKeys.heatmap(userId));
+
+            // Create optimistic hackathon object
+            const newHackathon: UserHackathon = {
+                id: 'temp-' + Math.random().toString(36).substr(2, 9),
+                user_id: userId,
+                hackathon_id: hackathon.hackathon_id,
+                hackathon_name: hackathon.hackathon_name,
+                hackathon_url: hackathon.hackathon_url,
+                platform: hackathon.platform,
+                tags: hackathon.tags || [],
+                start_date: hackathon.start_date,
+                end_date: hackathon.end_date,
+                status: hackathon.status || 'planned',
+                progress: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            // Optimistically update hackathons list
+            queryClient.setQueryData<UserHackathon[]>(hackathonKeys.user(userId), (old) => {
+                return [newHackathon, ...(old || [])];
+            });
+
+            // Optimistically update heatmap
+            const today = new Date().toISOString().split('T')[0];
+            queryClient.setQueryData<any[]>(activityKeys.heatmap(userId), (old) => {
+                const newData = [...(old || [])];
+                const todayActivity = newData.find((d: any) => d.date === today);
+
+                if (todayActivity) {
+                    todayActivity.level = 2; // Set to green
+                    todayActivity.activities.push({
+                        type: 'hackathon_track',
+                        description: `Tracked ${hackathon.hackathon_name}`,
+                        hackathonId: hackathon.hackathon_id
+                    });
+                } else {
+                    newData.push({
+                        date: today,
+                        level: 2,
+                        description: `Tracked ${hackathon.hackathon_name}`,
+                        activities: [{
+                            type: 'hackathon_track',
+                            description: `Tracked ${hackathon.hackathon_name}`,
+                            hackathonId: hackathon.hackathon_id
+                        }]
+                    });
+                }
+                return newData;
+            });
+
+            // Return contexts
+            return { previousHackathons, previousActivities };
+        },
+        onError: (err, { userId }, context) => {
+            // If the mutation fails, use the context returned from onMutate to roll back
+            if (context?.previousHackathons) {
+                queryClient.setQueryData(hackathonKeys.user(userId), context.previousHackathons);
+            }
+            if (context?.previousActivities) {
+                queryClient.setQueryData(activityKeys.heatmap(userId), context.previousActivities);
+            }
+        },
+        onSettled: (_, __, { userId }) => {
+            // Always refetch after error or success to ensure cache is consistent
+            queryClient.invalidateQueries({ queryKey: hackathonKeys.user(userId) });
             queryClient.invalidateQueries({ queryKey: activityKeys.all });
         },
     });

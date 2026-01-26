@@ -91,13 +91,13 @@ export async function registerForHackathon(
         }
 
         // Log activity
-        // Log activity asynchronously (don't block registration)
-        logActivity(
+        // Log activity synchronously to ensure it's there before we return
+        await logActivity(
             userId,
-            'hackathon_register',
-            `Registered for ${hackathon.hackathon_name}`,
+            'hackathon_track',
+            `Tracked ${hackathon.hackathon_name}`,
             hackathon.hackathon_id
-        ).catch(err => console.error('Error logging activity:', err));
+        );
 
         return { success: true, data: data as UserHackathon };
     } catch (error) {

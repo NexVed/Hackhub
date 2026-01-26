@@ -185,66 +185,46 @@ export async function createTeam(userId: string, data: CreateTeamData): Promise<
     }
 }
 
-/**
- * Get teams the user owns or is a member of
- */
-/**
- * Get teams the user owns or is a member of
- * Optimized to prevent N+1 queries
- */
 export async function getMyTeams(userId: string): Promise<TeamWithMembers[]> {
     if (!supabase || !userId) return [];
 
     try {
-        // 1. Get all team IDs first (efficient index lookups)
-        const [memberTeamsResponse, ownedTeamsResponse] = await Promise.all([
-            supabase
-                .from('team_members')
-                .select('team_id')
-                .eq('user_id', userId),
-            supabase
-                .from('teams')
-                .select('id')
-                .eq('owner_id', userId)
-        ]);
-
-        const teamIds = new Set([
-            ...(memberTeamsResponse.data?.map(m => m.team_id) || []),
-            ...(ownedTeamsResponse.data?.map(t => t.id) || [])
-        ]);
-
-        if (teamIds.size === 0) return [];
-
-        // 2. Fetch everything in ONE query using relations
-        const { data: teams, error } = await supabase
-            .from('teams')
+        // Fetch all teams the user is a member of (including owned ones, as owners are members)
+        const { data: memberships, error } = await supabase
+            .from('team_members')
             .select(`
-                *,
-                members:team_members (
+                team:teams (
                     *,
-                    profile:profiles (name, username, avatar_url)
-                ),
-                requests:team_requests (count)
+                    members:team_members (
+                        *,
+                        profile:profiles (name, username, avatar_url)
+                    ),
+                    requests:team_requests (count)
+                )
             `)
-            .in('id', Array.from(teamIds))
-            .eq('requests.status', 'pending') // Filter requests count to only pending
-            .order('created_at', { ascending: false });
+            .eq('user_id', userId)
+            .order('joined_at', { ascending: false });
 
-        if (error || !teams) {
-            console.error('Error fetching deep team data:', error);
+        if (error) {
+            console.error('Error fetching teams:', error);
             return [];
         }
 
-        // 3. Transform data to match TeamWithMembers interface
-        return teams.map(team => ({
-            ...team,
-            members: team.members || [],
-            member_count: team.members?.length || 0,
-            // Only owners see pending requests count
-            pending_requests: team.owner_id === userId
-                ? (team.requests?.[0]?.count || 0)
-                : 0,
-        })) as TeamWithMembers[];
+        if (!memberships) return [];
+
+        // Transform and filter nulls (in case a team was deleted but member record stuck? unlikely with FK)
+        return memberships
+            .map(m => m.team)
+            .filter((t): t is any => !!t) // Filter out nulls
+            .map(team => ({
+                ...team,
+                members: team.members || [],
+                member_count: team.members?.length || 0,
+                // Only owners see pending requests count
+                pending_requests: team.owner_id === userId
+                    ? (team.requests?.[0]?.count || 0)
+                    : 0,
+            })) as TeamWithMembers[];
 
     } catch (error) {
         console.error('Error fetching teams:', error);

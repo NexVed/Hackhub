@@ -1,4 +1,5 @@
 import express from 'express';
+import { createClient } from '@supabase/supabase-js';
 import supabase from '../services/supabase.js';
 import { cache } from '../services/cacheService.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -17,22 +18,41 @@ router.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     const cacheKey = `activities:${userId}`;
 
+    // Create a scoped client if auth header is present to respect RLS
+    // or to bypass RLS if the user is authorized
+    const authHeader = req.headers.authorization;
+    let queryClient = supabase;
+
+    if (authHeader) {
+        queryClient = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_KEY,
+            {
+                global: {
+                    headers: {
+                        Authorization: authHeader
+                    }
+                }
+            }
+        );
+    }
+
     try {
         // Try to get from cache first
-        const cachedData = cache.get(cacheKey);
-        if (cachedData) {
-            console.log(`📦 Cache HIT for activities:${userId}`);
-            return res.json({ activities: cachedData, cached: true });
-        }
+        // const cachedData = cache.get(cacheKey);
+        // if (cachedData) {
+        //     console.log(`📦 Cache HIT for activities:${userId}`);
+        //     return res.json({ activities: cachedData, cached: true });
+        // }
 
-        console.log(`📦 Cache MISS for activities:${userId}`);
+        // console.log(`📦 Cache MISS for activities:${userId}`);
 
         // Calculate date range (past 365 days)
         const today = new Date();
         const startDate = new Date(today);
         startDate.setDate(startDate.getDate() - 365);
 
-        const { data, error } = await supabase
+        const { data, error } = await queryClient
             .from('user_activities')
             .select('date, activity_type, description, hackathon_id')
             .eq('user_id', userId)
@@ -64,15 +84,16 @@ router.get('/:userId', async (req, res) => {
         Object.values(activityMap).forEach(day => {
             const activities = day.activities;
             const hasHackathonSubmit = activities.some(a => a.type === 'hackathon_submit');
+            const hasHackathonTrack = activities.some(a => a.type === 'hackathon_track'); // Green dot for tracking
             const hasHackathonProgress = activities.some(a => a.type === 'hackathon_progress');
             const hasMultipleTypes = new Set(activities.map(a => a.type)).size > 1;
 
-            if (hasMultipleTypes || activities.length >= 3) {
+            if (hasHackathonSubmit || hasMultipleTypes || activities.length >= 4) {
                 day.level = 4;
-            } else if (hasHackathonSubmit) {
+            } else if (activities.length >= 3) {
                 day.level = 3;
-            } else if (hasHackathonProgress || activities.length >= 2) {
-                day.level = 2;
+            } else if (hasHackathonProgress || hasHackathonTrack || activities.length >= 2) {
+                day.level = 2; // Level 2 is distinct green
             } else if (activities.length >= 1) {
                 day.level = 1;
             }
@@ -84,7 +105,7 @@ router.get('/:userId', async (req, res) => {
         const result = Object.values(activityMap);
 
         // Cache for 5 minutes
-        cache.set(cacheKey, result, 300);
+        // cache.set(cacheKey, result, 300);
 
         res.json({ activities: result, cached: false });
 
@@ -99,9 +120,19 @@ router.get('/:userId', async (req, res) => {
  * Log a new activity
  */
 router.post('/', requireAuth, async (req, res) => {
-    if (!supabase) {
-        return res.status(500).json({ error: 'Supabase not initialized' });
-    }
+    // We need to create a authenticated client for RLS to work
+    // The global 'supabase' client is ANON, so it fails RLS checks that require auth.uid()
+    const scopedSupabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_KEY,
+        {
+            global: {
+                headers: {
+                    Authorization: req.headers.authorization
+                }
+            }
+        }
+    );
 
     const { activityType, description, hackathonId, date } = req.body;
     const userId = req.user.id;
@@ -111,7 +142,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await scopedSupabase
             .from('user_activities')
             .insert({
                 user_id: userId,
@@ -148,8 +179,11 @@ function getDefaultDescription(type) {
         'hackathon_register': 'Registered for hackathon',
         'hackathon_progress': 'Updated project progress',
         'hackathon_submit': 'Submitted project',
+        'hackathon_track': 'Tracked a hackathon',
         'github_commit': 'GitHub contribution',
-        'leetcode_solve': 'Solved coding problem'
+        'leetcode_solve': 'Solved coding problem',
+        'team_create': 'Created a team',
+        'team_join': 'Joined a team'
     };
     return descriptions[type] || 'Activity logged';
 }

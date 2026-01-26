@@ -156,10 +156,10 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
                             : 'bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900'
                             }`}
                     >
-                        {isRegistering ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : registered ? (
+                        {registered ? (
                             <Check className="w-3 h-3" />
+                        ) : isRegistering ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
                             <Plus className="w-3 h-3" />
                         )}
