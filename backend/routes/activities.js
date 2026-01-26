@@ -1,5 +1,6 @@
 import express from 'express';
 import supabase from '../services/supabase.js';
+import { cache } from '../services/cacheService.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -14,16 +15,26 @@ router.get('/:userId', async (req, res) => {
     }
 
     const { userId } = req.params;
-
-    // Calculate date range (past 365 days)
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 365);
+    const cacheKey = `activities:${userId}`;
 
     try {
+        // Try to get from cache first
+        const cachedData = cache.get(cacheKey);
+        if (cachedData) {
+            console.log(`📦 Cache HIT for activities:${userId}`);
+            return res.json({ activities: cachedData, cached: true });
+        }
+
+        console.log(`📦 Cache MISS for activities:${userId}`);
+
+        // Calculate date range (past 365 days)
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 365);
+
         const { data, error } = await supabase
             .from('user_activities')
-            .select('*')
+            .select('date, activity_type, description, hackathon_id')
             .eq('user_id', userId)
             .gte('date', startDate.toISOString().split('T')[0])
             .order('date', { ascending: true });
@@ -70,7 +81,12 @@ router.get('/:userId', async (req, res) => {
             day.description = activities.map(a => a.description).join(', ');
         });
 
-        res.json({ activities: Object.values(activityMap) });
+        const result = Object.values(activityMap);
+
+        // Cache for 5 minutes
+        cache.set(cacheKey, result, 300);
+
+        res.json({ activities: result, cached: false });
 
     } catch (error) {
         console.error('Error fetching activities:', error);
@@ -109,6 +125,15 @@ router.post('/', requireAuth, async (req, res) => {
 
         if (error) throw error;
 
+        // Invalidate cache for this user
+        cache.invalidate(`activities:${userId}`);
+
+        // Emit real-time update via Socket.io
+        if (req.io) {
+            req.io.to(`user:${userId}`).emit('new_activity', data);
+            req.io.emit('activity_update', { userId, activity: data });
+        }
+
         res.json({ activity: data });
 
     } catch (error) {
@@ -130,3 +155,4 @@ function getDefaultDescription(type) {
 }
 
 export default router;
+

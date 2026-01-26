@@ -13,7 +13,7 @@ export default function HackathonSection({ title, hackathons, onRegister }: Hack
     if (hackathons.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col gap-4 py-2 overflow-hidden">
             <div className="flex items-center justify-between px-1">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                     {title}
@@ -26,11 +26,11 @@ export default function HackathonSection({ title, hackathons, onRegister }: Hack
                 </button>
             </div>
 
-            <div className="relative group/slider">
+            <div className="relative group/slider overflow-hidden">
                 {/* Horizontal scroll container */}
                 <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x scrollbar-hide">
-                    {hackathons.map((hackathon) => (
-                        <div key={hackathon.id} className="snap-start">
+                    {hackathons.map((hackathon, index) => (
+                        <div key={`${hackathon.id}-${index}`} className="snap-start flex-shrink-0">
                             <HackathonCard hackathon={hackathon} onRegister={onRegister} />
                         </div>
                     ))}

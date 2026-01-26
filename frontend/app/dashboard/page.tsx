@@ -74,18 +74,14 @@ export default function DashboardPage() {
                 status: newStatus,
                 progress: newProgress,
                 result: newResult
-            },
-            userId: user?.id
+            }
         });
-    }, [rawHackathons, user?.id, updateMutation]);
+    }, [rawHackathons, updateMutation]);
 
     // Handle remove hackathon
     const handleRemove = useCallback(async (id: string) => {
-        removeMutation.mutate({
-            hackathonId: id,
-            userId: user?.id
-        });
-    }, [user?.id, removeMutation]);
+        removeMutation.mutate(id);
+    }, [removeMutation]);
 
     // Create user profile from auth data AND database profile
     const userProfile = user ? {

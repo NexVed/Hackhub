@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Hackathon } from '../../types/hackathon';
-import { getHackathonsGroupedByPlatform } from '@/lib/scrapedHackathonService';
+import { useHackathons } from '@/hooks/useHackathons';
 import HackathonSection from './HackathonSection';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 
 interface DiscoverFeedProps {
     onRegister: (id: string) => void;
@@ -22,35 +23,69 @@ const sections: { title: string; platform: Hackathon['platform'] }[] = [
 ];
 
 export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
-    const [hackathonsByPlatform, setHackathonsByPlatform] = useState<Record<string, Hackathon[]>>({});
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    // We fetch ALL hackathons via the hook, but we group them locally in memory for the view
+    // Since we are paginating, this is a bit tricky for grouped views. 
+    // To simplify and improve performance, we will fetch one unified stream and let the user filter, 
+    // OR we just show the infinite stream of all hackathons mixed, OR specifically for this UI, 
+    // we should validly ask if we want to load ALL sections at once?
+    // 
+    // Optimization: The previous UI loaded ALL platforms at once. That's heavy.
+    // A better UI for performance is a single "Feed" or tabs. 
+    // BUT to keep the current UI: We will use the main useHackathons hook to fetch 'all'
+    // and then group them on the client. As the user scrolls, more data comes in and populates the sections.
 
-    const fetchHackathons = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const grouped = await getHackathonsGroupedByPlatform();
-            setHackathonsByPlatform(grouped);
-        } catch (err) {
-            console.error('Failed to fetch hackathons:', err);
-            setError('Failed to load hackathons. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        status,
+        error,
+        refetch
+    } = useHackathons();
+
+    const { ref, inView } = useInView();
 
     useEffect(() => {
-        fetchHackathons();
-    }, []);
+        if (inView && hasNextPage) {
+            fetchNextPage();
+        }
+    }, [inView, hasNextPage, fetchNextPage]);
 
-    // Calculate total count
-    const totalCount = Object.values(hackathonsByPlatform).reduce(
-        (sum, arr) => sum + arr.length,
-        0
-    );
+    // Grouping logic for the data we HAVE loaded so far
+    const hackathonsByPlatform: Record<string, Hackathon[]> = {
+        Unstop: [],
+        Devfolio: [],
+        Devnovate: [],
+        Hack2Skill: [],
+        HackerEarth: [],
+        Devpost: [],
+        MLH: [],
+        Other: [],
+    };
 
-    if (loading) {
+    // Deduplicate hackathons by id (same hackathon may appear in multiple pages)
+    const allHackathonsRaw = data?.pages.flatMap(page => page) || [];
+    const seenIds = new Set<string>();
+    const allHackathons = allHackathonsRaw.filter(hackathon => {
+        if (seenIds.has(hackathon.id)) {
+            return false;
+        }
+        seenIds.add(hackathon.id);
+        return true;
+    });
+
+    allHackathons.forEach(hackathon => {
+        if (hackathonsByPlatform[hackathon.platform]) {
+            hackathonsByPlatform[hackathon.platform].push(hackathon);
+        } else {
+            hackathonsByPlatform.Other.push(hackathon);
+        }
+    });
+
+    const totalCount = allHackathons.length;
+
+    if (status === 'pending') {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
@@ -61,15 +96,15 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
         );
     }
 
-    if (error) {
+    if (status === 'error') {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6">
                 <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
                 <p className="text-zinc-700 dark:text-zinc-300 font-medium mb-2">
-                    {error}
+                    Failed to load hackathons
                 </p>
                 <button
-                    onClick={fetchHackathons}
+                    onClick={() => refetch()}
                     className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
                     <RefreshCw className="w-4 h-4" />
@@ -79,20 +114,20 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
         );
     }
 
-    if (totalCount === 0) {
+    if (totalCount === 0 && !isFetchingNextPage) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6">
                 <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
                     <AlertCircle className="w-8 h-8 text-zinc-400" />
                 </div>
                 <p className="text-zinc-700 dark:text-zinc-300 font-medium mb-2">
-                    No hackathons found
+                    No hackathons available
                 </p>
                 <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center max-w-md">
-                    We couldn't find any hackathons at the moment. Check back later or refresh the page.
+                    Check back later for new opportunities.
                 </p>
                 <button
-                    onClick={fetchHackathons}
+                    onClick={() => refetch()}
                     className="mt-4 flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
                     <RefreshCw className="w-4 h-4" />
@@ -111,14 +146,14 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
                         Discover Hackathons
                     </h1>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {totalCount} hackathons available across platforms
+                        {totalCount}+ hackathons available across platforms
                     </p>
                 </div>
                 <button
-                    onClick={fetchHackathons}
+                    onClick={() => refetch()}
                     className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
-                    <RefreshCw className="w-4 h-4" />
+                    <RefreshCw className={`w-4 h-4 ${isFetchingNextPage ? 'animate-spin' : ''}`} />
                     Refresh
                 </button>
             </div>
@@ -127,6 +162,9 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
             <div className="space-y-8">
                 {sections.map((section) => {
                     const sectionHackathons = hackathonsByPlatform[section.platform] || [];
+
+                    // Only render sections that have content or if it's the first load
+                    if (sectionHackathons.length === 0) return null;
 
                     return (
                         <HackathonSection
@@ -137,6 +175,17 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
                         />
                     );
                 })}
+            </div>
+
+            {/* Load More trigger */}
+            <div ref={ref} className="flex justify-center py-8">
+                {isFetchingNextPage ? (
+                    <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" />
+                ) : hasNextPage ? (
+                    <span className="text-sm text-zinc-400">Scroll for more...</span>
+                ) : (
+                    <span className="text-sm text-zinc-400">You've reached the end!</span>
+                )}
             </div>
         </div>
     );

@@ -51,10 +51,9 @@ export default function MyHackathonsPage() {
             updates: {
                 status: newStatus,
                 progress: newStatus === 'completed' ? 100 : (newStatus === 'active' ? 10 : 0)
-            },
-            userId: user?.id
+            }
         });
-    }, [hackathons, updateMutation, user?.id]);
+    }, [hackathons, updateMutation]);
 
     const handleSetResult = useCallback(async (result: 'winner' | 'finalist' | 'participated') => {
         if (!resultModal) return;
@@ -66,19 +65,15 @@ export default function MyHackathonsPage() {
                 status: 'completed',
                 progress: 100,
                 result
-            },
-            userId: user?.id
+            }
         }, {
             onSuccess: () => setResultModal(null)
         });
-    }, [resultModal, updateMutation, user?.id]);
+    }, [resultModal, updateMutation]);
 
     const handleRemove = useCallback(async (id: string) => {
-        removeMutation.mutate({
-            hackathonId: id,
-            userId: user?.id
-        });
-    }, [removeMutation, user?.id]);
+        removeMutation.mutate(id);
+    }, [removeMutation]);
 
     const filteredHackathons = hackathons.filter((h) => {
         const matchesSearch = h.hackathon_name.toLowerCase().includes(searchQuery.toLowerCase());

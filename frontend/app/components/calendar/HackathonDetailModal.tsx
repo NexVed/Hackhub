@@ -107,9 +107,9 @@ export default function HackathonDetailModal({ hackathon, isOpen, onClose }: Hac
                             <div className="flex items-start gap-3 text-sm">
                                 <Tag className="w-4 h-4 text-zinc-400 mt-0.5" />
                                 <div className="flex flex-wrap gap-1.5">
-                                    {tags.map((tag) => (
+                                    {tags.map((tag, index) => (
                                         <span
-                                            key={tag}
+                                            key={`${tag}-${index}`}
                                             className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md"
                                         >
                                             {tag}

@@ -4,7 +4,6 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
 import CalendarGrid from '../components/calendar/CalendarGrid';
-import FlagshipSidebar from '../components/calendar/FlagshipSidebar';
 
 export default function CalendarPage() {
     return (
@@ -17,15 +16,12 @@ export default function CalendarPage() {
                     </span>
                 </TopBar>
 
-                {/* Main content area with two-column layout - takes remaining height */}
+                {/* Main content area - takes remaining height */}
                 <div className="flex-1 flex min-h-0 bg-zinc-100 dark:bg-zinc-950">
                     {/* Calendar - Main area */}
                     <main className="flex-1 min-h-0 overflow-hidden">
                         <CalendarGrid />
                     </main>
-
-                    {/* Featured Hackathons - Right sidebar with scroll */}
-                    <FlagshipSidebar />
                 </div>
             </SidebarInset>
         </SidebarProvider>

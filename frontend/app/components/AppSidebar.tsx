@@ -43,11 +43,16 @@ const mainNavItems = [
     },
 ];
 
-const exploreItems = [
+let exploreItems = [
     {
         title: 'Teams',
         href: '/teams',
         icon: Users,
+    },
+    {
+        title: 'MNCs Hackathons',
+        href: '/mnc-hackathons',
+        icon: Trophy,
     },
 ];
 
@@ -79,14 +84,14 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
-                                    <img 
-                                        src="/favicon.ico" 
-                                        alt="HackHub Logo" 
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
+                                    <img
+                                        src="/favicon.ico"
+                                        alt="HackHub Logo"
                                         className="size-full object-cover"
                                     />
                                 </div>
-                                <div className="flex flex-col gap-0.5 leading-none">
+                                <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                                     <span className="font-bold">HackkyHub</span>
                                     <span className="text-xs text-muted-foreground">Hackathon Manager</span>
                                 </div>

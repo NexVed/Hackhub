@@ -125,9 +125,9 @@ export default function WorkflowCard({ hackathon, onDragStart, onRemove }: Workf
             {/* Tags */}
             {hackathon.tags && hackathon.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                    {hackathon.tags.slice(0, 2).map((tag) => (
+                    {hackathon.tags.slice(0, 2).map((tag, index) => (
                         <span
-                            key={tag}
+                            key={`${tag}-${index}`}
                             className={`text-xs px-2 py-0.5 rounded ${isCompleted
                                 ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500'
                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'

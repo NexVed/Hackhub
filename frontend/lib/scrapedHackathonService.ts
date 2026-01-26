@@ -86,7 +86,7 @@ function generateTags(
         tags.push(location);
     }
 
-    return tags;
+    return Array.from(new Set(tags));
 }
 
 /**
@@ -110,20 +110,82 @@ function mapToHackathon(row: ScrapedHackathonRow): Hackathon {
     };
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 /**
- * Fetch all scraped hackathons from the database
+ * Map API response row to frontend Hackathon interface
  */
-export async function getScrapedHackathons(): Promise<Hackathon[]> {
+function mapApiToHackathon(row: any): Hackathon {
+    const platform = platformMap[row.platform] || 'Other';
+    const startDate = row.startDate || new Date().toISOString().split('T')[0];
+    const endDate = row.endDate || startDate;
+
+    return {
+        id: row.id,
+        name: row.name,
+        startDate,
+        endDate,
+        platform,
+        description: row.description || `Hackathon on ${row.platform}`,
+        tags: generateTags(row.platform, row.region, row.location),
+        url: row.url || '#',
+        status: computeStatus(row.startDate, row.endDate, row.status),
+    };
+}
+
+/**
+ * Fetch all scraped hackathons - uses backend API for caching
+ * Falls back to direct Supabase query if API fails
+ */
+export async function getScrapedHackathons(
+    page: number = 0,
+    pageSize: number = 20
+): Promise<Hackathon[]> {
+    try {
+        // Try backend API first (has caching)
+        const response = await fetch(
+            `${API_BASE_URL}/api/hackathons/scraped?page=${page}&limit=${pageSize}`,
+            { next: { revalidate: 300 } } // 5 min cache for Next.js
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            return (data.hackathons || []).map(mapApiToHackathon);
+        }
+    } catch (error) {
+        console.warn('API fetch failed, falling back to Supabase:', error);
+    }
+
+    // Fallback to direct Supabase query
+    return getScrapedHackathonsFromSupabase(page, pageSize);
+}
+
+/**
+ * Fallback: Fetch directly from Supabase
+ */
+async function getScrapedHackathonsFromSupabase(
+    page: number = 0,
+    pageSize: number = 20
+): Promise<Hackathon[]> {
     if (!supabase) {
         console.warn('Supabase not initialized');
         return [];
     }
 
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 30);
+    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
     try {
         const { data, error } = await supabase
             .from('scraped_hackathons')
             .select('*')
-            .order('start_date', { ascending: true });
+            .or(`end_date.gte.${cutoffDateStr},end_date.is.null,status.eq.upcoming,status.eq.live`)
+            .order('start_date', { ascending: true })
+            .range(from, to);
 
         if (error) {
             console.error('Error fetching scraped hackathons:', error);
@@ -132,28 +194,67 @@ export async function getScrapedHackathons(): Promise<Hackathon[]> {
 
         return (data || []).map(mapToHackathon);
     } catch (error) {
-        console.error('Error in getScrapedHackathons:', error);
+        console.error('Error in getScrapedHackathonsFromSupabase:', error);
         return [];
     }
 }
 
+
 /**
- * Fetch scraped hackathons by platform
+ * Fetch scraped hackathons by platform - uses backend API for caching
  */
 export async function getScrapedHackathonsByPlatform(
-    platform: string
+    platform: string,
+    page: number = 0,
+    pageSize: number = 20
+): Promise<Hackathon[]> {
+    try {
+        // Try backend API first (has caching)
+        const response = await fetch(
+            `${API_BASE_URL}/api/hackathons/scraped?platform=${platform}&page=${page}&limit=${pageSize}`,
+            { next: { revalidate: 300 } }
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            return (data.hackathons || []).map(mapApiToHackathon);
+        }
+    } catch (error) {
+        console.warn('API fetch failed, falling back to Supabase:', error);
+    }
+
+    // Fallback to direct Supabase query
+    return getScrapedHackathonsByPlatformFromSupabase(platform, page, pageSize);
+}
+
+/**
+ * Fallback: Fetch by platform directly from Supabase
+ */
+async function getScrapedHackathonsByPlatformFromSupabase(
+    platform: string,
+    page: number = 0,
+    pageSize: number = 20
 ): Promise<Hackathon[]> {
     if (!supabase) {
         console.warn('Supabase not initialized');
         return [];
     }
 
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 30);
+    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
     try {
         const { data, error } = await supabase
             .from('scraped_hackathons')
             .select('*')
             .eq('provider_platform_name', platform)
-            .order('start_date', { ascending: true });
+            .or(`end_date.gte.${cutoffDateStr},end_date.is.null`)
+            .order('start_date', { ascending: true })
+            .range(from, to);
 
         if (error) {
             console.error('Error fetching hackathons by platform:', error);
@@ -162,7 +263,7 @@ export async function getScrapedHackathonsByPlatform(
 
         return (data || []).map(mapToHackathon);
     } catch (error) {
-        console.error('Error in getScrapedHackathonsByPlatform:', error);
+        console.error('Error in getScrapedHackathonsByPlatformFromSupabase:', error);
         return [];
     }
 }

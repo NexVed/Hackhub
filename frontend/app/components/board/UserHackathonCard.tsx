@@ -110,9 +110,9 @@ export default function UserHackathonCard({ hackathon, onDragStart, onProgressUp
 
             {/* Tech tags */}
             <div className="flex flex-wrap gap-1.5">
-                {hackathon.tags.slice(0, 3).map((tag) => (
+                {hackathon.tags.slice(0, 3).map((tag, index) => (
                     <span
-                        key={tag}
+                        key={`${tag}-${index}`}
                         className="text-xs px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded"
                     >
                         {tag}

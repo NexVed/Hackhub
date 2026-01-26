@@ -21,7 +21,7 @@ export function useActivityHeatmap(userId: string | undefined) {
         queryKey: activityKeys.heatmap(userId || ''),
         queryFn: () => getUserActivities(userId || ''),
         enabled: !!userId,
-        staleTime: 2 * 60 * 1000, // 2 minutes
+        staleTime: 5 * 60 * 1000, // 5 minutes
         // Activities are time-sensitive for the heatmap
     });
 }

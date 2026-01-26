@@ -37,9 +37,10 @@ export async function getUserHackathons(userId: string): Promise<UserHackathon[]
     try {
         const { data, error } = await supabase
             .from('user_hackathons')
-            .select('*')
+            .select('id, user_id, hackathon_id, hackathon_name, hackathon_url, platform, tags, start_date, end_date, status, progress, result')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(100);
 
         if (error) {
             console.error('Error fetching user hackathons:', error);
@@ -90,12 +91,13 @@ export async function registerForHackathon(
         }
 
         // Log activity
-        await logActivity(
+        // Log activity asynchronously (don't block registration)
+        logActivity(
             userId,
             'hackathon_register',
             `Registered for ${hackathon.hackathon_name}`,
-            data.id
-        );
+            hackathon.hackathon_id
+        ).catch(err => console.error('Error logging activity:', err));
 
         return { success: true, data: data as UserHackathon };
     } catch (error) {

@@ -188,69 +188,64 @@ export async function createTeam(userId: string, data: CreateTeamData): Promise<
 /**
  * Get teams the user owns or is a member of
  */
+/**
+ * Get teams the user owns or is a member of
+ * Optimized to prevent N+1 queries
+ */
 export async function getMyTeams(userId: string): Promise<TeamWithMembers[]> {
     if (!supabase || !userId) return [];
 
     try {
-        // Get teams where user is owner or member
-        const { data: memberTeams } = await supabase
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', userId);
+        // 1. Get all team IDs first (efficient index lookups)
+        const [memberTeamsResponse, ownedTeamsResponse] = await Promise.all([
+            supabase
+                .from('team_members')
+                .select('team_id')
+                .eq('user_id', userId),
+            supabase
+                .from('teams')
+                .select('id')
+                .eq('owner_id', userId)
+        ]);
 
-        const teamIds = memberTeams?.map(m => m.team_id) || [];
+        const teamIds = new Set([
+            ...(memberTeamsResponse.data?.map(m => m.team_id) || []),
+            ...(ownedTeamsResponse.data?.map(t => t.id) || [])
+        ]);
 
-        const { data: ownedTeams } = await supabase
-            .from('teams')
-            .select('id')
-            .eq('owner_id', userId);
+        if (teamIds.size === 0) return [];
 
-        const ownedIds = ownedTeams?.map(t => t.id) || [];
-        const allTeamIds = [...new Set([...teamIds, ...ownedIds])];
-
-        if (allTeamIds.length === 0) return [];
-
-        // Fetch full team data
+        // 2. Fetch everything in ONE query using relations
         const { data: teams, error } = await supabase
             .from('teams')
-            .select('*')
-            .in('id', allTeamIds)
+            .select(`
+                *,
+                members:team_members (
+                    *,
+                    profile:profiles (name, username, avatar_url)
+                ),
+                requests:team_requests (count)
+            `)
+            .in('id', Array.from(teamIds))
+            .eq('requests.status', 'pending') // Filter requests count to only pending
             .order('created_at', { ascending: false });
 
-        if (error || !teams) return [];
+        if (error || !teams) {
+            console.error('Error fetching deep team data:', error);
+            return [];
+        }
 
-        // Fetch members for each team
-        const teamsWithMembers = await Promise.all(
-            teams.map(async (team) => {
-                const { data: members } = await supabase!
-                    .from('team_members')
-                    .select(`
-                        *,
-                        profile:profiles(name, username, avatar_url)
-                    `)
-                    .eq('team_id', team.id);
+        // 3. Transform data to match TeamWithMembers interface
+        return teams.map(team => ({
+            ...team,
+            members: team.members || [],
+            member_count: team.members?.length || 0,
+            // Only owners see pending requests count
+            pending_requests: team.owner_id === userId
+                ? (team.requests?.[0]?.count || 0)
+                : 0,
+        })) as TeamWithMembers[];
 
-                // Get pending requests count if owner
-                let pendingRequests = 0;
-                if (team.owner_id === userId) {
-                    const { count } = await supabase!
-                        .from('team_requests')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('team_id', team.id)
-                        .eq('status', 'pending');
-                    pendingRequests = count || 0;
-                }
-
-                return {
-                    ...team,
-                    members: members || [],
-                    member_count: members?.length || 0,
-                    pending_requests: pendingRequests,
-                } as TeamWithMembers;
-            })
-        );
-
-        return teamsWithMembers;
     } catch (error) {
         console.error('Error fetching teams:', error);
         return [];
@@ -259,14 +254,22 @@ export async function getMyTeams(userId: string): Promise<TeamWithMembers[]> {
 
 /**
  * Get public teams for browsing
+ * Optimized to prevent N+1 queries
  */
 export async function getPublicTeams(userId?: string): Promise<TeamWithMembers[]> {
     if (!supabase) return [];
 
     try {
+        // Fetch teams with members in ONE query
         const { data: teams, error } = await supabase
             .from('teams')
-            .select('*')
+            .select(`
+                *,
+                members:team_members (
+                    *,
+                    profile:profiles (name, username, avatar_url)
+                )
+            `)
             .eq('is_public', true)
             .eq('status', 'recruiting')
             .order('created_at', { ascending: false })
@@ -274,35 +277,23 @@ export async function getPublicTeams(userId?: string): Promise<TeamWithMembers[]
 
         if (error || !teams) return [];
 
-        // Filter out teams user is already in
         let filteredTeams = teams;
-        if (userId) {
-            const { data: memberTeams } = await supabase
-                .from('team_members')
-                .select('team_id')
-                .eq('user_id', userId);
 
-            const memberTeamIds = new Set(memberTeams?.map(m => m.team_id) || []);
-            filteredTeams = teams.filter(t => !memberTeamIds.has(t.id) && t.owner_id !== userId);
+        // Filter out teams user is already in (client-side filtering is fine for 20 items)
+        if (userId) {
+            filteredTeams = teams.filter(t => {
+                const isMember = t.members?.some((m: any) => m.user_id === userId);
+                const isOwner = t.owner_id === userId;
+                return !isMember && !isOwner;
+            });
         }
 
-        // Fetch member counts
-        const teamsWithMembers = await Promise.all(
-            filteredTeams.map(async (team) => {
-                const { data: members } = await supabase!
-                    .from('team_members')
-                    .select(`*, profile:profiles(name, username, avatar_url)`)
-                    .eq('team_id', team.id);
+        return filteredTeams.map(team => ({
+            ...team,
+            members: team.members || [],
+            member_count: team.members?.length || 0,
+        })) as TeamWithMembers[];
 
-                return {
-                    ...team,
-                    members: members || [],
-                    member_count: members?.length || 0,
-                } as TeamWithMembers;
-            })
-        );
-
-        return teamsWithMembers;
     } catch (error) {
         console.error('Error fetching public teams:', error);
         return [];
@@ -574,5 +565,26 @@ export async function hasPendingRequest(userId: string, teamId: string): Promise
         return !!data;
     } catch (error) {
         return false;
+    }
+}
+
+/**
+ * Get all pending requests for a user (Bulk check)
+ */
+export async function getPendingRequestsForUser(userId: string): Promise<Set<string>> {
+    if (!supabase || !userId) return new Set();
+
+    try {
+        const { data } = await supabase
+            .from('team_requests')
+            .select('team_id')
+            .eq('user_id', userId)
+            .eq('status', 'pending');
+
+        if (!data) return new Set();
+        return new Set(data.map(r => r.team_id));
+    } catch (error) {
+        console.error('Error fetching pending requests:', error);
+        return new Set();
     }
 }

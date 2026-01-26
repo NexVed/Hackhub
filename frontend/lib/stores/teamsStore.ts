@@ -6,6 +6,7 @@ import {
     joinByCode as joinByCodeApi,
     requestToJoin as requestToJoinApi,
     hasPendingRequest,
+    getPendingRequestsForUser,
     TeamWithMembers,
     CreateTeamData,
     Team
@@ -62,18 +63,11 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
         set({ loading: true, userId });
 
         try {
-            const [myTeams, publicTeams] = await Promise.all([
+            const [myTeams, publicTeams, requestedIds] = await Promise.all([
                 getMyTeams(userId),
-                getPublicTeams(userId)
+                getPublicTeams(userId),
+                getPendingRequestsForUser(userId)
             ]);
-
-            // Check pending requests for public teams
-            const requestedIds = new Set<string>();
-            for (const team of publicTeams) {
-                if (await hasPendingRequest(userId, team.id)) {
-                    requestedIds.add(team.id);
-                }
-            }
 
             set({
                 myTeams,

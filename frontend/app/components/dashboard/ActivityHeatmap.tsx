@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActivityDay } from '@/lib/activityService';
 
 interface ActivityHeatmapProps {
@@ -12,11 +12,11 @@ const CELL_SIZE = 11;
 const CELL_GAP = 2;
 
 const levelColors = [
-    'bg-zinc-100 dark:bg-zinc-800',
-    'bg-emerald-200 dark:bg-emerald-900',
-    'bg-emerald-400 dark:bg-emerald-700',
-    'bg-emerald-500 dark:bg-emerald-500',
-    'bg-emerald-600 dark:bg-emerald-400',
+    'bg-zinc-100 dark:bg-zinc-800',             // Empty
+    'bg-green-200 dark:bg-green-900/40',        // Level 1
+    'bg-green-400 dark:bg-green-700/60',        // Level 2
+    'bg-green-500 dark:bg-green-500',           // Level 3
+    'bg-green-600 dark:bg-green-400',           // Level 4
 ];
 
 interface CalendarDay {
@@ -27,36 +27,42 @@ interface CalendarDay {
     dayOfMonth: number;
 }
 
-export default function ActivityHeatmap({ data, loading = false }: ActivityHeatmapProps) {
+function ActivityHeatmap({ data, loading = false }: ActivityHeatmapProps) {
     const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
 
-    // Build calendar data - exactly 53 weeks like GitHub/LeetCode
+    // Build calendar data for 2026 (Jan - Dec)
     const { weeks, monthLabels } = useMemo(() => {
+        const year = 2026;
         const today = new Date();
-        // Use UTC noon to properly align with DB dates (which are YYYY-MM-DD stored as UTC)
-        today.setUTCHours(12, 0, 0, 0);
 
-        // Start from 52 weeks ago
-        const startDate = new Date(today);
-        startDate.setUTCDate(today.getUTCDate() - 364);
+        // Start from Jan 1, 2026
+        const startDate = new Date(Date.UTC(year, 0, 1)); // Jan 1 2026
+        const endDate = new Date(Date.UTC(year, 11, 31)); // Dec 31 2026
 
-        // Adjust to start from the nearest Sunday (going back)
-        const dayOfWeek = startDate.getUTCDay();
-        startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
+        // Adjust start date to the previous Sunday (or stay on Sunday) to align grid
+        const dayOfWeek = startDate.getUTCDay(); // 0 is Sunday
+        const gridStartDate = new Date(startDate);
+        gridStartDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
 
         const weeksData: CalendarDay[][] = [];
         const monthPositions: { month: string; weekIndex: number }[] = [];
 
         let currentMonth = -1;
-        let currentDate = new Date(startDate);
+        let currentDate = new Date(gridStartDate);
 
-        // Generate all weeks
-        while (currentDate <= today) {
+        // Generate weeks until we cover the entire year
+        // We iterate until currentDate is past endDate
+        while (currentDate <= endDate || currentDate.getUTCDay() !== 0) {
+            // Stop if we've gone past the year AND we're at the start of a new week
+            if (currentDate > endDate && currentDate.getUTCDay() === 0) break;
+
             const week: CalendarDay[] = [];
 
             for (let day = 0; day < 7; day++) {
-                if (currentDate > today) {
-                    // Future dates - add empty placeholder
+                const isWithinYear = currentDate.getUTCFullYear() === year;
+
+                // If the day belongs to the previous year (because of Sunday alignment) or next year
+                if (!isWithinYear) {
                     week.push({
                         date: '',
                         level: 0,
@@ -232,3 +238,11 @@ export default function ActivityHeatmap({ data, loading = false }: ActivityHeatm
         </div>
     );
 }
+
+const ActivityHeatmapMemo = React.memo(ActivityHeatmap, (prev, next) => {
+    return prev.loading === next.loading &&
+        prev.data === next.data &&
+        prev.data?.length === next.data?.length;
+});
+
+export default ActivityHeatmapMemo;

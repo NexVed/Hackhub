@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 
-import ThemeToggle from '../components/ThemeToggle';
 import DiscoverFeed from '../components/board/DiscoverFeed';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '../components/AppSidebar';
+import { TopBar } from '../components/TopBar';
 
 export default function DiscoverPage() {
-    const { user, profile, loading } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
     const [registered, setRegistered] = useState<Set<string>>(new Set());
 
@@ -32,36 +34,28 @@ export default function DiscoverPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-            {/* Header Section */}
-            <div className="relative overflow-hidden border-b border-zinc-200 dark:border-zinc-800">
-                {/* Ambient Effects */}
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/10 dark:bg-emerald-900/20 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 dark:bg-blue-900/15 rounded-full blur-[120px] pointer-events-none" />
-
-                <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-                    {/* Header with Toggle */}
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg">
-                                <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <div>
-                                <span className="text-lg font-semibold text-foreground">
-                                    Discover
-                                </span>
-                                <p className="text-sm text-muted-foreground">
-                                    Welcome back, {profile?.name?.split(' ')[0] || 'Hacker'}!
-                                </p>
-                            </div>
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+                <TopBar>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg">
+                            <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <ThemeToggle />
+                        <div>
+                            <span className="text-lg font-semibold text-foreground">
+                                Discover Hackathons
+                            </span>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </TopBar>
 
-            {/* Hackathon Feed */}
-            <DiscoverFeed onRegister={handleRegister} />
-        </div>
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-auto overflow-x-hidden">
+                    {/* Hackathon Feed */}
+                    <DiscoverFeed onRegister={handleRegister} />
+                </div>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }
+

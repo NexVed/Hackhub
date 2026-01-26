@@ -37,16 +37,17 @@ export async function getUserActivities(userId: string): Promise<ActivityDay[]> 
         return generateMockActivities();
     }
 
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 365);
+    // Fixed range for 2026 as requested
+    const startDate = new Date('2026-01-01');
+    const endDate = new Date('2026-12-31');
 
     try {
         const { data, error } = await supabase
             .from('user_activities')
-            .select('*')
+            .select('date, activity_type, description, hackathon_id')
             .eq('user_id', userId)
             .gte('date', startDate.toISOString().split('T')[0])
+            .lte('date', endDate.toISOString().split('T')[0])
             .order('date', { ascending: true });
 
         if (error) {
@@ -78,6 +79,13 @@ export async function logActivity(
     }
 
     try {
+        // Verify we have an active session before attempting insert
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            console.warn('No active session for logging activity');
+            return false;
+        }
+
         const { error } = await supabase
             .from('user_activities')
             .insert({
@@ -88,10 +96,13 @@ export async function logActivity(
                 date: date || new Date().toISOString().split('T')[0]
             });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Activity insert error:', error.message, error.code, error.details);
+            throw error;
+        }
         return true;
-    } catch (error) {
-        console.error('Error logging activity:', error);
+    } catch (error: any) {
+        console.error('Error logging activity:', error?.message || error);
         return false;
     }
 }
@@ -146,9 +157,8 @@ function aggregateActivities(rawActivities: any[]): ActivityDay[] {
  */
 function generateMockActivities(): ActivityDay[] {
     const activities: ActivityDay[] = [];
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 365);
+    const startDate = new Date('2026-01-01');
+    const endDate = new Date('2026-12-31');
 
     const descriptions = [
         'Registered for hackathon',
@@ -158,7 +168,7 @@ function generateMockActivities(): ActivityDay[] {
         'Solved coding problem',
     ];
 
-    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().split('T')[0];
         const rand = Math.random();
 
