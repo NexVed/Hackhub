@@ -128,7 +128,7 @@ export function BugReportDialog({ open, onOpenChange }: BugReportDialogProps) {
                                 id="title"
                                 placeholder="E.g., Login page alignment issue"
                                 value={title}
-                                onChange={(e) => setTitle(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
                                 className="bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                             />
                         </div>
@@ -139,7 +139,7 @@ export function BugReportDialog({ open, onOpenChange }: BugReportDialogProps) {
                                 <select
                                     id="priority"
                                     value={priority}
-                                    onChange={(e) => setPriority(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPriority(e.target.value)}
                                     className="flex h-9 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                 >
                                     <option value="Low">Low (Visual glitch)</option>
@@ -178,7 +178,7 @@ export function BugReportDialog({ open, onOpenChange }: BugReportDialogProps) {
                                 id="description"
                                 placeholder="Describe what happened and how to reproduce it..."
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
                                 className="min-h-[120px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 resize-none"
                             />
                         </div>
