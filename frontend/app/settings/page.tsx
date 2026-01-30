@@ -138,21 +138,21 @@ export default function SettingsPage() {
                 </TopBar>
 
                 <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-auto">
-                    <div className="max-w-4xl mx-auto p-6 space-y-6">
+                    <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
                         {/* Account Section */}
                         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-200 dark:border-zinc-800">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
                                         <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Account</h2>
-                                        <p className="text-sm text-zinc-500 dark:text-zinc-400">Manage your profile information</p>
+                                        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">Manage your profile information</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 space-y-4">
+                            <div className="p-4 sm:p-6 space-y-4">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Display Name</label>
@@ -198,22 +198,27 @@ export default function SettingsPage() {
 
                         {/* Social Links Section */}
                         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-200 dark:border-zinc-800">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
                                         <Link2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Social Links</h2>
-                                        <p className="text-sm text-zinc-500 dark:text-zinc-400">Connect your social profiles</p>
+                                        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">Connect your social profiles</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 space-y-4">
+                            <div className="p-4 sm:p-6 space-y-4">
                                 {socialLinks.map((social) => (
-                                    <div key={social.key} className="flex items-center gap-4">
-                                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                                            {social.icon}
+                                    <div key={social.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                                                {social.icon}
+                                            </div>
+                                            <label className="block sm:hidden text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                                {social.label}
+                                            </label>
                                         </div>
                                         <div className="flex-1">
                                             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">

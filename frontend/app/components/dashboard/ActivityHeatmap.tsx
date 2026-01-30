@@ -151,15 +151,15 @@ function ActivityHeatmap({ data, loading = false }: ActivityHeatmapProps) {
     }
 
     return (
-        <div className="p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Activity</h3>
-                <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <div className="p-3 sm:p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300">Activity</h3>
+                <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-zinc-500">
                     <span>Less</span>
                     {levelColors.map((color, i) => (
                         <div
                             key={i}
-                            className={`w-3 h-3 rounded-sm ${color}`}
+                            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${color}`}
                         />
                     ))}
                     <span>More</span>

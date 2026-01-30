@@ -101,7 +101,7 @@ function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
     return (
         <div
             onClick={handleClick}
-            className="group relative shrink-0 w-[280px] sm:w-[300px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1"
+            className="group relative flex-none w-[85vw] sm:w-[320px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1 snap-start"
         >
             {/* Header: Platform & Time */}
             <div className="flex items-center justify-between mb-3">

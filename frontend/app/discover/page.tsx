@@ -34,9 +34,9 @@ export default function DiscoverPage() {
     }
 
     return (
-        <SidebarProvider>
+        <SidebarProvider className="fixed inset-0 z-0 w-full overflow-hidden bg-background">
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="h-full overflow-hidden flex flex-col">
                 <TopBar>
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg">
@@ -50,7 +50,7 @@ export default function DiscoverPage() {
                     </div>
                 </TopBar>
 
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-auto overflow-x-hidden">
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-y-auto overflow-x-hidden w-full overscroll-y-contain">
                     {/* Hackathon Feed */}
                     <DiscoverFeed onRegister={handleRegister} />
                 </div>

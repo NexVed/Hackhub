@@ -147,38 +147,38 @@ export default function TeamsPage() {
                 </TopBar>
 
                 <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-auto">
-                    <div className="max-w-6xl mx-auto p-6 space-y-6">
+                    <div className="max-w-6xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
                         {/* Header & Actions */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
                             <div>
-                                <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">My Teams</h1>
+                                <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">My Teams</h1>
                                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                                     Create, join, and manage your hackathon teams
                                 </p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 w-full sm:w-auto">
                                 <button
                                     onClick={() => setIsJoinOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm"
                                 >
                                     <UserPlus className="w-4 h-4" />
-                                    Join by Code
+                                    <span className="whitespace-nowrap">Join Team</span>
                                 </button>
                                 <button
                                     onClick={() => setIsCreateOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors text-sm"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    Create Team
+                                    <span className="whitespace-nowrap">Create Team</span>
                                 </button>
                             </div>
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex gap-1 bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg w-fit">
+                        <div className="flex gap-1 bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg w-full sm:w-fit overflow-x-auto">
                             <button
                                 onClick={() => setActiveTab('my')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'my'
+                                className={`flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'my'
                                     ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm'
                                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                                     }`}
@@ -187,7 +187,7 @@ export default function TeamsPage() {
                             </button>
                             <button
                                 onClick={() => setActiveTab('discover')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'discover'
+                                className={`flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'discover'
                                     ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm'
                                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                                     }`}
@@ -209,7 +209,7 @@ export default function TeamsPage() {
                         </div>
 
                         {/* Teams Grid */}
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
                             {(activeTab === 'my' ? filteredMyTeams : filteredPublicTeams).map((team) => {
                                 const isOwner = team.owner_id === user?.id;
                                 const teamRequested = hasRequested(team.id);

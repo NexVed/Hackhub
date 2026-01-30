@@ -154,10 +154,10 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
     }
 
     return (
-        <div className="flex flex-col gap-6 sm:gap-8 px-4 py-6 sm:px-6 max-w-7xl mx-auto">
+        <div className="flex flex-col gap-6 sm:gap-8 px-2 sm:px-6 py-4 sm:py-8 w-full max-w-[1600px] mx-auto">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-0.5 sm:space-y-1">
                     <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         Discover Hackathons
                     </h1>

@@ -19,7 +19,7 @@ export default function CalendarPage() {
                 {/* Main content area - takes remaining height */}
                 <div className="flex-1 flex min-h-0 bg-zinc-100 dark:bg-zinc-950">
                     {/* Calendar - Main area */}
-                    <main className="flex-1 min-h-0 overflow-hidden flex flex-col items-center p-6">
+                    <main className="flex-1 min-h-0 overflow-hidden flex flex-col items-center p-2 sm:p-4 md:p-6">
                         <div className="w-full h-full">
                             <CalendarGrid />
                         </div>

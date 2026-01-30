@@ -153,11 +153,11 @@ export default function CommunityPage() {
                             alt="Community"
                             className="absolute inset-0 w-full h-full object-cover opacity-50"
                         />
-                        <div className="relative z-20 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center">
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight">
+                        <div className="relative z-20 h-full max-w-7xl mx-auto px-4 sm:px-6 flex flex-col justify-center">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
                                 Connect, Share, Build.
                             </h1>
-                            <p className="text-indigo-100 max-w-xl text-lg opacity-90">
+                            <p className="text-indigo-100 max-w-xl text-base sm:text-lg opacity-90">
                                 Join 10,000+ developers sharing their hackathon journeys, code, and opportunities.
                             </p>
                         </div>
@@ -242,9 +242,9 @@ export default function CommunityPage() {
                                                 {/* Post Header */}
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="flex gap-3">
-                                                        <img src={post.author.avatar || `https://ui-avatars.com/api/?name=${post.author.name}&background=random`} alt={post.author.name} className="w-11 h-11 rounded-full ring-2 ring-white dark:ring-zinc-800 object-cover" />
+                                                        <img src={post.author.avatar || `https://ui-avatars.com/api/?name=${post.author.name}&background=random`} alt={post.author.name} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-white dark:ring-zinc-800 object-cover shrink-0" />
                                                         <div>
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                                                                 <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 hover:text-indigo-500 cursor-pointer">{post.author.name}</h3>
                                                                 {post.author.badge && (
                                                                     <span className="px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">

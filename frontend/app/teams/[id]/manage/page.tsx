@@ -174,16 +174,16 @@ export default function ManageTeamPage() {
                 </TopBar>
 
                 <div className="flex-1 bg-gradient-to-b from-zinc-100 to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 overflow-auto">
-                    <div className="max-w-5xl mx-auto p-6 space-y-8">
+                    <div className="max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-8">
 
                         {/* Hero Header */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-xl sm:rounded-2xl p-4 sm:p-8 text-white">
                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
 
-                            <div className="relative flex items-start justify-between">
-                                <div className="flex items-center gap-6">
-                                    <div className="relative group">
-                                        <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/20 overflow-hidden">
+                            <div className="relative flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 text-center sm:text-left">
+                                    <div className="relative group shrink-0">
+                                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/20 overflow-hidden">
                                             {team.logo_url ? (
                                                 <>
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -214,21 +214,21 @@ export default function ManageTeamPage() {
                                             onChange={handleLogoUpload}
                                         />
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h1 className="text-3xl font-bold">{team.name}</h1>
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${team.is_public ? 'bg-green-400/20 text-green-100' : 'bg-white/20 text-white'}`}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 mb-2">
+                                            <h1 className="text-2xl sm:text-3xl font-bold truncate max-w-[200px] sm:max-w-none">{team.name}</h1>
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium backdrop-blur-sm ${team.is_public ? 'bg-green-400/20 text-green-100' : 'bg-white/20 text-white'}`}>
                                                 {team.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                                                 {team.is_public ? 'Public' : 'Private'}
                                             </span>
                                         </div>
-                                        <p className="text-white/80 text-lg">{team.description || 'Building something amazing together'}</p>
+                                        <p className="text-white/80 text-sm sm:text-lg line-clamp-2 sm:line-clamp-none">{team.description || 'Building something amazing together'}</p>
                                     </div>
                                 </div>
 
                                 {/* Invite Code Card */}
                                 {team.team_code && (
-                                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                                    <div className="w-full sm:w-auto bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/20 flex flex-col items-center sm:items-start shrink-0">
                                         <div className="flex items-center gap-2 text-white/70 text-xs font-medium mb-2">
                                             <Share2 className="w-3.5 h-3.5" />
                                             INVITE CODE
@@ -244,8 +244,8 @@ export default function ManageTeamPage() {
                             </div>
 
                             {/* Quick Stats */}
-                            <div className="relative flex items-center justify-between mt-6 pt-6 border-t border-white/20">
-                                <div className="flex items-center gap-6">
+                            <div className="relative flex flex-col sm:flex-row items-center justify-between mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 gap-4">
+                                <div className="flex items-center gap-4 sm:gap-6 text-sm sm:text-base">
                                     <div className="flex items-center gap-2">
                                         <Users className="w-5 h-5 text-white/70" />
                                         <span className="font-semibold">{team.members.length}</span>
@@ -271,7 +271,7 @@ export default function ManageTeamPage() {
                                             )}
                                         </button>
                                     </SheetTrigger>
-                                    <SheetContent className="w-[400px] sm:w-[540px]">
+                                    <SheetContent className="w-[90vw] sm:w-[540px]">
                                         <SheetHeader className="mb-6">
                                             <SheetTitle className="flex items-center gap-2 text-xl">
                                                 <Sparkles className="w-5 h-5 text-amber-500" />
@@ -378,8 +378,8 @@ export default function ManageTeamPage() {
                                             const colorClass = memberColors[index % memberColors.length];
 
                                             return (
-                                                <div key={member.id} className="p-5 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
-                                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden`}>
+                                                <div key={member.id} className="p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                                                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white text-sm sm:text-xl font-bold shadow-lg overflow-hidden shrink-0`}>
                                                         {profile?.avatar_url ? (
                                                             <>
                                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -390,8 +390,8 @@ export default function ManageTeamPage() {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">
+                                                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                                            <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm sm:text-lg">
                                                                 {profile?.name || profile?.username || 'Unknown'}
                                                             </h4>
                                                             {isOwnerMember && (

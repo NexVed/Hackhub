@@ -30,7 +30,7 @@ export default function HackathonDetailModal({ hackathon, isOpen, onClose }: Hac
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -38,13 +38,13 @@ export default function HackathonDetailModal({ hackathon, isOpen, onClose }: Hac
             />
 
             {/* Modal */}
-            <div className={`relative w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border ${isFlagship ? 'border-violet-300 dark:border-violet-700' : 'border-zinc-200 dark:border-zinc-800'} overflow-hidden`}>
+            <div className={`relative w-full max-w-[calc(100vw-1rem)] sm:max-w-md rounded-xl sm:rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border ${isFlagship ? 'border-violet-300 dark:border-violet-700' : 'border-zinc-200 dark:border-zinc-800'} overflow-hidden`}>
                 {/* Gradient header for flagship */}
                 {isFlagship && (
                     <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500" />
                 )}
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     {/* Close button */}
                     <button
                         onClick={onClose}

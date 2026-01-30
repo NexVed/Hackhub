@@ -81,20 +81,20 @@ export default function WorkflowBoard({ hackathons, onUpdateStatus, onRemove }: 
 
     return (
         <div
-            className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6"
+            className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 sm:p-4 md:p-6"
             onDragEnd={handleDragEnd}
         >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div>
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">My Hackathon Journey</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Drag cards between columns to track your progress</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100">My Hackathon Journey</h3>
+                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">Drag cards between columns to track your progress</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-zinc-500">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-zinc-500">
                     <span>{hackathons.length} hackathons tracked</span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                 {columns.map((col) => {
                     const colHackathons = getHackathonsByStatus(col.status);
                     const isDropTarget = activeDropZone === col.status;
@@ -111,21 +111,21 @@ export default function WorkflowBoard({ hackathons, onUpdateStatus, onRemove }: 
                             onDrop={(e) => handleDrop(e, col.status)}
                         >
                             {/* Column header */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
+                            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b border-zinc-200 dark:border-zinc-800">
                                 <div className="flex items-center gap-2">
                                     <span className={`w-2 h-2 rounded-full ${col.accentColor}`} />
                                     <div>
-                                        <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300">{col.title}</h4>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-500">{col.description}</p>
+                                        <h4 className="font-medium text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">{col.title}</h4>
+                                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500 hidden sm:block">{col.description}</p>
                                     </div>
                                 </div>
-                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-800 px-1.5 sm:px-2 py-0.5 rounded-full">
                                     {colHackathons.length}
                                 </span>
                             </div>
 
                             {/* Cards container */}
-                            <div className="flex-1 p-3 space-y-3 min-h-[200px]">
+                            <div className="flex-1 p-2 sm:p-3 space-y-2 sm:space-y-3 min-h-[120px] sm:min-h-[200px]">
                                 {colHackathons.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center h-full py-8 text-center">
                                         <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center mb-2">

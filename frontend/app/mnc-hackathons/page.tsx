@@ -99,14 +99,14 @@ export default function MNCHackathonsPage() {
                                 </span>
                             </div>
 
-                            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
                                 Top MNC Hackathons <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-amber-300">
                                     Accelerate Your Career
                                 </span>
                             </h1>
 
-                            <p className="max-w-2xl text-lg text-zinc-300 mb-8 leading-relaxed">
+                            <p className="max-w-2xl text-base sm:text-lg text-zinc-300 mb-6 sm:mb-8 leading-relaxed">
                                 Discover flagship hackathons from the world's leading tech companies.
                                 Compete, network, and showcase your skills to get hired by top MNCs.
                             </p>
@@ -140,9 +140,9 @@ export default function MNCHackathonsPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="flex items-center gap-2 mb-8">
+                                <div className="flex items-center gap-2 mb-6 sm:mb-8">
                                     <Sparkles className="w-5 h-5 text-violet-500" />
-                                    <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                                    <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
                                         Active & Upcoming Challenges
                                     </h2>
                                 </div>
