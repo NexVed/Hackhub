@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getScrapedHackathonsByPlatform, getScrapedHackathons } from '@/lib/scrapedHackathonService';
+import { getScrapedHackathonsByPlatform, getScrapedHackathons, getScrapedHackathonsOverview } from '@/lib/scrapedHackathonService';
 import { getUserHackathons, registerForHackathon, removeUserHackathon, updateUserHackathon, UserHackathon } from '@/lib/userHackathonService';
 
 // Query Keys
@@ -31,6 +31,14 @@ export function useHackathons(platform?: string) {
             return allPages.length;
         },
         staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    });
+}
+
+export function useHackathonOverview() {
+    return useQuery({
+        queryKey: ['hackathons', 'overview'],
+        queryFn: getScrapedHackathonsOverview,
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
 

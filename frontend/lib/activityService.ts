@@ -1,16 +1,14 @@
 import supabase from './supabase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 export type ActivityType =
     | 'hackathon_register'
     | 'hackathon_progress'
     | 'hackathon_submit'
-    | 'hackathon_track'
     | 'github_commit'
     | 'leetcode_solve'
     | 'team_create'
-    | 'team_join';
+    | 'team_join'
+    | 'hackathon_track';
 
 export interface Activity {
     id: string;
@@ -33,81 +31,76 @@ export interface ActivityDay {
 
 /**
  * Fetch user's activities for the heatmap
- * Uses backend API for caching
  */
 export async function getUserActivities(userId: string): Promise<ActivityDay[]> {
+    if (!supabase) {
+        console.warn('Supabase not initialized, using mock data');
+        return generateMockActivities();
+    }
+
+    // Fixed range for 2026 as requested
+    const startDate = new Date('2026-01-01');
+    const endDate = new Date('2026-12-31');
+
     try {
-        if (!supabase) return [];
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data, error } = await supabase
+            .from('user_activities')
+            .select('date, activity_type, description, hackathon_id')
+            .eq('user_id', userId)
+            .gte('date', startDate.toISOString().split('T')[0])
+            .lte('date', endDate.toISOString().split('T')[0])
+            .order('date', { ascending: true });
 
-        const headers: HeadersInit = {};
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
+        if (error) {
+            console.warn('Could not fetch activities (using mock data):', error.message || error);
+            return generateMockActivities();
         }
 
-        const response = await fetch(`${API_URL}/api/activities/${userId}`, {
-            headers
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch activities');
-        }
-
-        const data = await response.json();
-
-        if (data.cached) {
-            console.log('Using cached activity data');
-        }
-
-        return data.activities as ActivityDay[];
+        console.log('Fetched activities from DB:', data?.length);
+        return aggregateActivities(data || []);
     } catch (error) {
         console.error('Error fetching activities:', error);
-        // Fallback to empty or mock if needed, but for now return empty
-        return [];
+        return generateMockActivities();
     }
 }
 
 /**
  * Log a new activity
- * Uses backend API to ensure cache invalidation
  */
 export async function logActivity(
     userId: string,
     activityType: ActivityType,
     description?: string,
     hackathonId?: string,
-    date: string = new Date().toISOString().split('T')[0]
+    date?: string
 ): Promise<boolean> {
+    if (!supabase) {
+        console.warn('Supabase not initialized');
+        return false;
+    }
 
     try {
-        if (!supabase) throw new Error('Supabase not initialized');
-
-        // Get current session token for auth
+        // Verify we have an active session before attempting insert
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             console.warn('No active session for logging activity');
             return false;
         }
 
-        const response = await fetch(`${API_URL}/api/activities`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-                activityType,
-                description,
-                hackathonId,
-                date
-            })
-        });
+        const { error } = await supabase
+            .from('user_activities')
+            .insert({
+                user_id: userId,
+                activity_type: activityType,
+                description: description || getDefaultDescription(activityType),
+                hackathon_id: hackathonId || null,
+                date: date || new Date().toISOString().split('T')[0]
+            });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to log activity');
+        if (error) {
+            console.error('Activity insert error:', error.message, error.code, error.details);
+            throw error;
         }
-
         return true;
     } catch (error: any) {
         console.error('Error logging activity:', error?.message || error);
@@ -115,16 +108,100 @@ export async function logActivity(
     }
 }
 
+/**
+ * Aggregate raw activities into day-level data for heatmap
+ */
+function aggregateActivities(rawActivities: any[]): ActivityDay[] {
+    const activityMap: Record<string, ActivityDay> = {};
+
+    rawActivities.forEach(activity => {
+        const date = activity.date;
+        if (!activityMap[date]) {
+            activityMap[date] = {
+                date,
+                level: 0,
+                activities: [],
+                description: ''
+            };
+        }
+        activityMap[date].activities.push({
+            type: activity.activity_type,
+            description: activity.description
+        });
+    });
+
+    // Calculate levels
+    Object.values(activityMap).forEach(day => {
+        const activities = day.activities;
+        const hasSubmit = activities.some(a => a.type === 'hackathon_submit');
+        const hasProgress = activities.some(a => a.type === 'hackathon_progress');
+        const uniqueTypes = new Set(activities.map(a => a.type)).size;
+
+        if (uniqueTypes >= 3 || activities.length >= 4) {
+            day.level = 4;
+        } else if (hasSubmit || uniqueTypes >= 2 || activities.some(a => a.type === 'team_create')) {
+            day.level = 3;
+        } else if (hasProgress || activities.length >= 2 || activities.some(a => a.type === 'team_join')) {
+            day.level = 2;
+        } else if (activities.length >= 1) {
+            day.level = 1;
+        }
+
+        day.description = activities.map(a => a.description).join(' • ');
+    });
+
+    return Object.values(activityMap);
+}
+
+/**
+ * Generate mock activities for demo/fallback
+ */
+function generateMockActivities(): ActivityDay[] {
+    const activities: ActivityDay[] = [];
+    const startDate = new Date('2026-01-01');
+    const endDate = new Date('2026-12-31');
+
+    const descriptions = [
+        'Registered for hackathon',
+        'Updated project progress',
+        'Submitted project',
+        'GitHub contribution',
+        'Solved coding problem',
+    ];
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        const rand = Math.random();
+
+        let level: 0 | 1 | 2 | 3 | 4 = 0;
+        if (rand > 0.7) level = 1;
+        if (rand > 0.85) level = 2;
+        if (rand > 0.92) level = 3;
+        if (rand > 0.97) level = 4;
+
+        if (level > 0) {
+            activities.push({
+                date: dateStr,
+                level,
+                description: descriptions[Math.floor(Math.random() * descriptions.length)],
+                activities: []
+            });
+        }
+    }
+
+    return activities;
+}
+
 function getDefaultDescription(type: ActivityType): string {
     const descriptions: Record<ActivityType, string> = {
         'hackathon_register': 'Registered for hackathon',
         'hackathon_progress': 'Updated project progress',
         'hackathon_submit': 'Submitted project',
-        'hackathon_track': 'Tracked a hackathon',
         'github_commit': 'GitHub contribution',
         'leetcode_solve': 'Solved coding problem',
         'team_create': 'Created a team',
-        'team_join': 'Joined a team'
+        'team_join': 'Joined a team',
+        'hackathon_track': 'Tracked a hackathon'
     };
     return descriptions[type] || 'Activity logged';
 }

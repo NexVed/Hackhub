@@ -228,6 +228,38 @@ export async function getScrapedHackathonsByPlatform(
 }
 
 /**
+ * Fetch overview of hackathons (top 5 from each platform)
+ * Guarantees all sections are populated on first load
+ */
+export async function getScrapedHackathonsOverview(): Promise<Record<string, Hackathon[]>> {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/hackathons/scraped/overview`,
+            { next: { revalidate: 300 } }
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            const overviewRaw = data.overview || {};
+
+            const overviewStrings: Record<string, Hackathon[]> = {};
+
+            // Map the raw objects to Hackathon type
+            Object.keys(overviewRaw).forEach(key => {
+                overviewStrings[key] = (overviewRaw[key] || []).map(mapApiToHackathon);
+            });
+
+            return overviewStrings;
+        }
+    } catch (error) {
+        console.warn('API fetch overview failed:', error);
+    }
+
+    // If backend fails, return empty object (hooks will fall back to normal fetch)
+    return {};
+}
+
+/**
  * Fallback: Fetch by platform directly from Supabase
  */
 async function getScrapedHackathonsByPlatformFromSupabase(

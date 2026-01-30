@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Hackathon } from '../../types/hackathon';
-import { useHackathons } from '@/hooks/useHackathons';
+import { useHackathons, useHackathonOverview } from '@/hooks/useHackathons';
 import HackathonSection from './HackathonSection';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
@@ -23,24 +23,20 @@ const sections: { title: string; platform: Hackathon['platform'] }[] = [
 ];
 
 export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
-    // We fetch ALL hackathons via the hook, but we group them locally in memory for the view
-    // Since we are paginating, this is a bit tricky for grouped views. 
-    // To simplify and improve performance, we will fetch one unified stream and let the user filter, 
-    // OR we just show the infinite stream of all hackathons mixed, OR specifically for this UI, 
-    // we should validly ask if we want to load ALL sections at once?
-    // 
-    // Optimization: The previous UI loaded ALL platforms at once. That's heavy.
-    // A better UI for performance is a single "Feed" or tabs. 
-    // BUT to keep the current UI: We will use the main useHackathons hook to fetch 'all'
-    // and then group them on the client. As the user scrolls, more data comes in and populates the sections.
-
+    // 1. Fetch the overview (guaranteed 5 items per platform)
     const {
-        data,
+        data: overviewData,
+        status: overviewStatus
+    } = useHackathonOverview();
+
+    // 2. Fetch the infinite stream for "Scroll for more"
+    const {
+        data: infiniteData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        status,
-        error,
+        status: infiniteStatus,
+        error: infiniteError,
         refetch
     } = useHackathons();
 
@@ -52,40 +48,60 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
         }
     }, [inView, hasNextPage, fetchNextPage]);
 
-    // Grouping logic for the data we HAVE loaded so far
-    const hackathonsByPlatform: Record<string, Hackathon[]> = {
-        Unstop: [],
-        Devfolio: [],
-        Devnovate: [],
-        Hack2Skill: [],
-        HackerEarth: [],
-        Devpost: [],
-        MLH: [],
-        Other: [],
-    };
+    // Grouping logic that merges Overview + Infinite Stream
+    const hackathonsByPlatform = useMemo(() => {
+        const grouped: Record<string, Hackathon[]> = {
+            Unstop: [],
+            Devfolio: [],
+            Devnovate: [],
+            Hack2Skill: [],
+            HackerEarth: [],
+            Devpost: [],
+            MLH: [],
+            Other: [],
+        };
 
-    // Deduplicate hackathons by id (same hackathon may appear in multiple pages)
-    const allHackathonsRaw = data?.pages.flatMap(page => page) || [];
-    const seenIds = new Set<string>();
-    const allHackathons = allHackathonsRaw.filter(hackathon => {
-        if (seenIds.has(hackathon.id)) {
-            return false;
+        const seenIds = new Set<string>();
+
+        // Process Overview Data first (guarantees something in every section)
+        if (overviewData) {
+            Object.keys(overviewData).forEach(platform => {
+                overviewData[platform].forEach(h => {
+                    if (!seenIds.has(h.id)) {
+                        seenIds.add(h.id);
+                        if (grouped[h.platform]) {
+                            grouped[h.platform].push(h);
+                        } else {
+                            grouped.Other.push(h);
+                        }
+                    }
+                });
+            });
         }
-        seenIds.add(hackathon.id);
-        return true;
-    });
 
-    allHackathons.forEach(hackathon => {
-        if (hackathonsByPlatform[hackathon.platform]) {
-            hackathonsByPlatform[hackathon.platform].push(hackathon);
-        } else {
-            hackathonsByPlatform.Other.push(hackathon);
-        }
-    });
+        // Process Infinite Stream (adds more items as user scrolls)
+        const allInfiniteRaw = infiniteData?.pages.flatMap(page => page) || [];
+        allInfiniteRaw.forEach(h => {
+            if (!seenIds.has(h.id)) {
+                seenIds.add(h.id);
+                if (grouped[h.platform]) {
+                    grouped[h.platform].push(h);
+                } else {
+                    grouped.Other.push(h);
+                }
+            }
+        });
 
-    const totalCount = allHackathons.length;
+        return grouped;
+    }, [overviewData, infiniteData]);
 
-    if (status === 'pending') {
+    const totalCount = Object.values(hackathonsByPlatform).flat().length;
+
+    // We only show full loading if BOTH are pending
+    const isInitialLoading = overviewStatus === 'pending' && infiniteStatus === 'pending';
+    const isError = overviewStatus === 'error' && infiniteStatus === 'error'; // Only hard error if both fail
+
+    if (isInitialLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
@@ -96,7 +112,7 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
         );
     }
 
-    if (status === 'error') {
+    if (isError) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6">
                 <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
@@ -138,20 +154,20 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
     }
 
     return (
-        <div className="flex flex-col gap-8 p-6 max-w-7xl mx-auto">
+        <div className="flex flex-col gap-6 sm:gap-8 px-4 py-6 sm:px-6 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         Discover Hackathons
                     </h1>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
                         {totalCount}+ hackathons available across platforms
                     </p>
                 </div>
                 <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                    className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors self-start sm:self-auto"
                 >
                     <RefreshCw className={`w-4 h-4 ${isFetchingNextPage ? 'animate-spin' : ''}`} />
                     Refresh

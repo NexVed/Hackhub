@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Hackathon } from '../../types/hackathon';
 import { getCountdown, getDaysUntilStart } from '../../data/mockHackathons';
 import { Plus, Check, Loader2 } from 'lucide-react';
@@ -29,7 +29,7 @@ const statusIndicators: Record<Hackathon['status'], { bg: string; label: string 
     'ending-soon': { bg: 'bg-orange-500', label: 'Ending Soon' },
 };
 
-export default function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
+function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
     const { user } = useAuth();
 
     // Use TanStack Query for user hackathons (auto-fetches & caches)
@@ -101,7 +101,7 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
     return (
         <div
             onClick={handleClick}
-            className="group relative flex-none w-[300px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1"
+            className="group relative shrink-0 w-[280px] sm:w-[300px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1"
         >
             {/* Header: Platform & Time */}
             <div className="flex items-center justify-between mb-3">
@@ -183,3 +183,5 @@ export default function HackathonCard({ hackathon, onRegister }: HackathonCardPr
         </div>
     );
 }
+
+export default memo(HackathonCard);

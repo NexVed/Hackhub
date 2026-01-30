@@ -221,9 +221,9 @@ export default function MyHackathonsPage() {
                                                                 </p>
                                                                 {hackathon.tags && hackathon.tags.length > 0 && (
                                                                     <div className="flex flex-wrap gap-1.5">
-                                                                        {hackathon.tags.map((tag) => (
+                                                                        {hackathon.tags.map((tag, index) => (
                                                                             <span
-                                                                                key={tag}
+                                                                                key={`${tag}-${index}`}
                                                                                 className="px-2 py-0.5 text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-md"
                                                                             >
                                                                                 {tag}

@@ -11,7 +11,6 @@ import bugRoutes from './routes/bugs.js';
 import { initSocket } from './services/socketService.js';
 
 dotenv.config();
-
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;

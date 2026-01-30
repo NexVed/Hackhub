@@ -265,6 +265,7 @@ router.get('/scraped', async (req, res) => {
             .from('scraped_hackathons')
             .select('*')
             .or(`end_date.gte.${cutoffDateStr},end_date.is.null,status.eq.upcoming,status.eq.live`)
+            // Order by start_date to show upcoming events first, mixing platforms
             .order('start_date', { ascending: true })
             .range(from, to);
 
@@ -285,6 +286,88 @@ router.get('/scraped', async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching scraped hackathons:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /api/hackathons/scraped/overview
+ * Get top 5 upcoming hackathons for EACH platform in parallel
+ * ensuring that the dashboard is fully populated on first load
+ */
+router.get('/scraped/overview', async (req, res) => {
+    if (!supabase) {
+        return res.status(500).json({ error: 'Supabase not initialized' });
+    }
+
+    const cacheKey = 'hackathons:scraped:overview';
+
+    try {
+        const cachedData = cache.get(cacheKey);
+        if (cachedData) {
+            console.log(`📦 Cache HIT: ${cacheKey}`);
+            return res.json({ overview: cachedData, cached: true });
+        }
+
+        console.log(`📦 Cache MISS: ${cacheKey}`);
+
+        const platforms = [
+            'Unstop', 'Devfolio', 'Devnovate', 'Hack2Skill',
+            'HackerEarth', 'Devpost', 'MLH'
+        ];
+
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 2); // Show recent
+        const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+        // Create parallel queries for each platform
+        const queries = platforms.map(async (platform) => {
+            const { data } = await supabase
+                .from('scraped_hackathons')
+                .select('*')
+                .eq('provider_platform_name', platform)
+                .or(`end_date.gte.${cutoffDateStr},end_date.is.null,status.eq.upcoming,status.eq.live`)
+                .order('start_date', { ascending: true })
+                .limit(5);
+
+            return {
+                platform,
+                hackathons: (data || []).map(transformScrapedHackathon)
+            };
+        });
+
+        // Also get 'Other' (platforms not in the main list)
+        const otherQuery = (async () => {
+            const { data } = await supabase
+                .from('scraped_hackathons')
+                .select('*')
+                .not('provider_platform_name', 'in', `(${platforms.join(',')})`)
+                .or(`end_date.gte.${cutoffDateStr},end_date.is.null,status.eq.upcoming,status.eq.live`)
+                .order('start_date', { ascending: true })
+                .limit(5);
+
+            return {
+                platform: 'Other',
+                hackathons: (data || []).map(transformScrapedHackathon)
+            };
+        })();
+
+        queries.push(otherQuery);
+
+        const results = await Promise.all(queries);
+
+        // Convert array to map: { Unstop: [...], Devfolio: [...] }
+        const overview = {};
+        results.forEach(result => {
+            overview[result.platform] = result.hackathons;
+        });
+
+        cache.set(cacheKey, overview, CACHE_TTL.LIST);
+
+        res.json({ overview, cached: false });
+
+    } catch (error) {
+        console.error('Error fetching hackathon overview:', error);
         res.status(500).json({ error: error.message });
     }
 });
