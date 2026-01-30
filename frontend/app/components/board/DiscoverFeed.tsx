@@ -97,12 +97,20 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
 
     const totalCount = Object.values(hackathonsByPlatform).flat().length;
 
-    // Count how many platforms have data from the overview
+    // Count how many platforms have data
     const platformsWithData = Object.values(hackathonsByPlatform).filter(arr => arr.length > 0).length;
 
-    // Wait for the overview query to finish loading - this guarantees all platforms are populated
-    // Only show loading if overview is still pending and we don't have data from multiple platforms yet
-    const isInitialLoading = overviewStatus === 'pending' && platformsWithData < 3;
+    // Check if overview data actually has content (not just empty object)
+    const overviewHasData = overviewData && Object.keys(overviewData).length > 0 &&
+        Object.values(overviewData).some(arr => arr.length > 0);
+
+    // CRITICAL: Wait for overview to complete. Overview is what populates all platform sections.
+    // Only show content when:
+    // 1. Overview has loaded successfully with data, OR
+    // 2. Both queries finished (even if overview failed) and we have some data to show
+    const bothQueriesFinished = overviewStatus !== 'pending' && infiniteStatus !== 'pending';
+    const isInitialLoading = !overviewHasData && !bothQueriesFinished;
+
     const isError = overviewStatus === 'error' && infiniteStatus === 'error' && platformsWithData === 0;
 
     if (isInitialLoading) {
