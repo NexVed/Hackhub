@@ -97,9 +97,11 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
 
     const totalCount = Object.values(hackathonsByPlatform).flat().length;
 
-    // We only show content after BOTH queries have loaded their initial data
-    const isInitialLoading = overviewStatus === 'pending' || infiniteStatus === 'pending';
-    const isError = overviewStatus === 'error' && infiniteStatus === 'error'; // Only hard error if both fail
+    // Show loading only if we have NO data at all from either source
+    // This handles slow API (Render cold starts) by showing data as soon as it's available
+    const hasAnyData = totalCount > 0;
+    const isInitialLoading = !hasAnyData && (overviewStatus === 'pending' || infiniteStatus === 'pending');
+    const isError = !hasAnyData && overviewStatus === 'error' && infiniteStatus === 'error';
 
     if (isInitialLoading) {
         return (

@@ -249,14 +249,60 @@ export async function getScrapedHackathonsOverview(): Promise<Record<string, Hac
                 overviewStrings[key] = (overviewRaw[key] || []).map(mapApiToHackathon);
             });
 
-            return overviewStrings;
+            // Only return if we have actual data
+            if (Object.keys(overviewStrings).length > 0) {
+                return overviewStrings;
+            }
         }
     } catch (error) {
         console.warn('API fetch overview failed:', error);
     }
 
-    // If backend fails, return empty object (hooks will fall back to normal fetch)
-    return {};
+    // Fallback: Fetch directly from Supabase
+    return getScrapedHackathonsOverviewFromSupabase();
+}
+
+/**
+ * Fallback: Fetch overview directly from Supabase
+ */
+async function getScrapedHackathonsOverviewFromSupabase(): Promise<Record<string, Hackathon[]>> {
+    if (!supabase) {
+        console.warn('Supabase not initialized');
+        return {};
+    }
+
+    const platforms = ['Unstop', 'Devfolio', 'Devnovate', 'Hack2Skill', 'HackerEarth', 'Devpost', 'MLH'];
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 2);
+    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+    const overview: Record<string, Hackathon[]> = {};
+
+    try {
+        // Fetch top 5 from each platform in parallel
+        const queries = platforms.map(async (platform) => {
+            const { data } = await supabase!
+                .from('scraped_hackathons')
+                .select('*')
+                .eq('provider_platform_name', platform)
+                .or(`end_date.gte.${cutoffDateStr},end_date.is.null,status.eq.upcoming,status.eq.live`)
+                .order('start_date', { ascending: true })
+                .limit(5);
+
+            return { platform, hackathons: (data || []).map(mapToHackathon) };
+        });
+
+        const results = await Promise.all(queries);
+
+        results.forEach(result => {
+            overview[result.platform] = result.hackathons;
+        });
+
+        return overview;
+    } catch (error) {
+        console.error('Error fetching overview from Supabase:', error);
+        return {};
+    }
 }
 
 /**
