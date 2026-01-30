@@ -97,11 +97,13 @@ export default function DiscoverFeed({ onRegister }: DiscoverFeedProps) {
 
     const totalCount = Object.values(hackathonsByPlatform).flat().length;
 
-    // Show loading only if we have NO data at all from either source
-    // This handles slow API (Render cold starts) by showing data as soon as it's available
-    const hasAnyData = totalCount > 0;
-    const isInitialLoading = !hasAnyData && (overviewStatus === 'pending' || infiniteStatus === 'pending');
-    const isError = !hasAnyData && overviewStatus === 'error' && infiniteStatus === 'error';
+    // Count how many platforms have data from the overview
+    const platformsWithData = Object.values(hackathonsByPlatform).filter(arr => arr.length > 0).length;
+
+    // Wait for the overview query to finish loading - this guarantees all platforms are populated
+    // Only show loading if overview is still pending and we don't have data from multiple platforms yet
+    const isInitialLoading = overviewStatus === 'pending' && platformsWithData < 3;
+    const isError = overviewStatus === 'error' && infiniteStatus === 'error' && platformsWithData === 0;
 
     if (isInitialLoading) {
         return (
