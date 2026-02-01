@@ -34,7 +34,8 @@ interface ScrapedHackathonRow {
 function computeStatus(
     startDate: string | null,
     endDate: string | null,
-    dbStatus: string | null
+    dbStatus: string | null,
+    sourceScrapedAt?: string
 ): Hackathon['status'] {
     const now = new Date();
 
@@ -53,6 +54,15 @@ function computeStatus(
         if (daysUntilEnd <= 3) return 'ending-soon';
 
         return 'live';
+    }
+
+    // If no dates, check if scraped data is stale (older than 30 days)
+    if (sourceScrapedAt) {
+        const scrapedDate = new Date(sourceScrapedAt);
+        const daysSinceScrape = (now.getTime() - scrapedDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceScrape > 30) {
+            return 'completed'; // Hide old hackathons with no dates
+        }
     }
 
     return dbStatus === 'upcoming' ? 'upcoming' : 'live';
@@ -106,11 +116,11 @@ function mapToHackathon(row: ScrapedHackathonRow): Hackathon {
         description: row.description || `Hackathon on ${row.provider_platform_name}`,
         tags: generateTags(row.provider_platform_name, row.place_region, row.location),
         url: row.direct_link || '#',
-        status: computeStatus(row.start_date, row.end_date, row.status),
+        status: computeStatus(row.start_date, row.end_date, row.status, row.source_scraped_at),
     };
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 /**
  * Map API response row to frontend Hackathon interface
@@ -129,7 +139,7 @@ function mapApiToHackathon(row: any): Hackathon {
         description: row.description || `Hackathon on ${row.platform}`,
         tags: generateTags(row.platform, row.region, row.location),
         url: row.url || '#',
-        status: computeStatus(row.startDate, row.endDate, row.status),
+        status: computeStatus(row.startDate, row.endDate, row.status, row.scrapedAt),
     };
 }
 
@@ -150,14 +160,17 @@ export async function getScrapedHackathons(
 
         if (response.ok) {
             const data = await response.json();
-            return (data.hackathons || []).map(mapApiToHackathon);
+            return (data.hackathons || [])
+                .map(mapApiToHackathon)
+                .filter((h: Hackathon) => h.status !== 'completed');
         }
     } catch (error) {
         console.warn('API fetch failed, falling back to Supabase:', error);
     }
 
     // Fallback to direct Supabase query
-    return getScrapedHackathonsFromSupabase(page, pageSize);
+    const results = await getScrapedHackathonsFromSupabase(page, pageSize);
+    return results.filter(h => h.status !== 'completed');
 }
 
 /**
@@ -224,7 +237,8 @@ export async function getScrapedHackathonsByPlatform(
     }
 
     // Fallback to direct Supabase query
-    return getScrapedHackathonsByPlatformFromSupabase(platform, page, pageSize);
+    const results = await getScrapedHackathonsByPlatformFromSupabase(platform, page, pageSize);
+    return results.filter(h => h.status !== 'completed');
 }
 
 /**

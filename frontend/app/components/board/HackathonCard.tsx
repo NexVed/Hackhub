@@ -27,6 +27,7 @@ const statusIndicators: Record<Hackathon['status'], { bg: string; label: string 
     upcoming: { bg: 'bg-blue-500', label: 'Upcoming' },
     live: { bg: 'bg-green-500', label: 'Live' },
     'ending-soon': { bg: 'bg-orange-500', label: 'Ending Soon' },
+    completed: { bg: 'bg-zinc-500', label: 'Completed' },
 };
 
 function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
@@ -101,7 +102,7 @@ function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
     return (
         <div
             onClick={handleClick}
-            className="group relative flex-none w-[85vw] sm:w-[320px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1 snap-start"
+            className="group relative flex-none w-[280px] max-w-[calc(100vw-2rem)] sm:w-[320px] bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-1 snap-start"
         >
             {/* Header: Platform & Time */}
             <div className="flex items-center justify-between mb-3">
@@ -117,8 +118,8 @@ function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
             </div>
 
             {/* Content */}
-            <div className="space-y-2 mb-4">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 leading-tight line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                <h3 className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 leading-tight line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {hackathon.name}
                 </h3>
 
@@ -180,7 +181,7 @@ function HackathonCard({ hackathon, onRegister }: HackathonCardProps) {
                     </button>
                 )}
             </div>
-        </div>
+        </div >
     );
 }
 

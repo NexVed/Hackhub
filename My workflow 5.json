@@ -129,7 +129,7 @@
             },
             {
               "name": "q",
-              "value": "site:devfolio.co hackathon (ongoing OR live OR happening now OR apply now OR register) 2025 2026"
+              "value": "site:devfolio.co hackathon (ongoing OR live OR happening now OR apply now OR register) 2026"
             },
             {
               "name": "num",
@@ -167,7 +167,7 @@
             },
             {
               "name": "q",
-              "value": "site:hack2skill.com hackathon (ongoing OR live OR open registration) 2025 2026"
+              "value": "site:hack2skill.com hackathon (ongoing OR live OR open registration) 2026"
             },
             {
               "name": "num",
@@ -231,7 +231,7 @@
             },
             {
               "name": "q",
-              "value": "site:mlh.io hackathon (ongoing OR live OR happening now OR register) 2025 2026"
+              "value": "site:mlh.io hackathon (ongoing OR live OR happening now OR register) 2026"
             },
             {
               "name": "num",
@@ -269,7 +269,7 @@
             },
             {
               "name": "q",
-              "value": "hackathon (ongoing OR live OR happening now OR registration open) 2025 2026 apply india tech"
+              "value": "hackathon (ongoing OR live OR happening now OR registration open) 2026 apply india tech"
             },
             {
               "name": "num",
@@ -332,7 +332,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Devfolio SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Devfolio results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('devfolio.co');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress') || text.includes('submissions open')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Devfolio',\n      hackathon_name: r.title?.replace(/ \\| Devfolio.*$/i, '').replace(/ - Devfolio$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Devfolio returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
+        "jsCode": "const data = $input.item.json;\nconst results = data.organic_results || [];\n\nconsole.log('Devfolio SerpAPI found ' + results.length + ' results');\n\nif (!results.length) {\n  return [{ json: { skip: true, reason: 'No Devfolio results found' } }];\n}\n\nconst hackathons = results.filter(r => {\n  const url = (r.link || '').toLowerCase();\n  return url.includes('devfolio.co');\n}).map(r => {\n  const snippet = (r.snippet || '').toLowerCase();\n  const title = (r.title || '').toLowerCase();\n  const text = snippet + ' ' + title;\n  \n  // Strict Year Check\n  if (!text.includes('2026')) {\n     return { json: { skip: true } };\n  }\n\n  let status = 'upcoming';\n  if (text.includes('ongoing') || text.includes('live now') || text.includes('happening now') || text.includes('in progress') || text.includes('submissions open')) {\n    status = 'live';\n  } else if (text.includes('ended') || text.includes('concluded') || text.includes('past') || text.includes('completed')) {\n    status = 'completed';\n  }\n  \n  return {\n    json: {\n      provider_platform_name: 'Devfolio',\n      hackathon_name: r.title?.replace(/ \\| Devfolio.*$/i, '').replace(/ - Devfolio$/i, '').trim() || 'Unknown',\n      start_date: null,\n      end_date: null,\n      status: status,\n      place_region: 'india',\n      location: 'India',\n      description: (r.snippet || '').substring(0, 500),\n      direct_link: r.link,\n      source_scraped_at: new Date().toISOString()\n    }\n  };\n}).filter(h => !h.json.skip && h.json.hackathon_name !== 'Unknown' && h.json.direct_link && h.json.status !== 'completed');\n\nconsole.log('Devfolio returning ' + hackathons.length + ' hackathons');\nreturn hackathons.length > 0 ? hackathons : [{ json: { skip: true } }];"
       },
       "id": "fab24a75-1c70-4226-9b20-f52b5b774486",
       "name": "Extract Devfolio",

@@ -7,7 +7,7 @@ export interface Hackathon {
   description: string;
   tags: string[];
   url: string;
-  status: 'upcoming' | 'live' | 'ending-soon';
+  status: 'upcoming' | 'live' | 'ending-soon' | 'completed';
 }
 
 export interface UserHackathon extends Hackathon {
