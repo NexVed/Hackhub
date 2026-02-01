@@ -110,7 +110,7 @@ function mapToHackathon(row: ScrapedHackathonRow): Hackathon {
     };
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 /**
  * Map API response row to frontend Hackathon interface

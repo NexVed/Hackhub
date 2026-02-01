@@ -10,7 +10,7 @@ import { Bug, AlertCircle, CheckCircle2, Loader2, FileText, UploadCloud } from '
 import { useAuth } from '@/app/contexts/AuthContext';
 import supabase from '@/lib/supabase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 interface BugReportDialogProps {
     open: boolean;
